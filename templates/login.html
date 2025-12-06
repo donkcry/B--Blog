@@ -1,0 +1,82 @@
+{% extends 'base.html'%}
+
+{% load static %}
+
+{% block title %}登录{% endblock %}
+
+{% block head %}
+    <style>
+        /* 自定义非阻塞提示框样式 */
+        .custom-alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            background: #1a1d20;
+            color: white;
+            border-radius: 5px;
+            z-index: 9999;
+            /* 初始隐藏，通过JS控制显示 */
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, top 0.3s ease-in-out;
+            /* 避免遮挡点击 */
+            pointer-events: none;
+        }
+        /* 提示框显示状态 */
+        .custom-alert.show {
+            opacity: 1;
+            top: 30px; /* 轻微位移动画 */
+            pointer-events: auto;
+        }
+        /* 自动消失的淡出动画 */
+        .custom-alert.fade-out {
+            opacity: 0;
+            top: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block main %}
+
+    <div style="max-width: 330px" class="m-auto">
+        <h1 class="text-center">登录</h1>
+        <form action="" method="post">
+            {% csrf_token %}
+            <div class="mb-2">
+                <label>邮箱</label>
+                <input type="email" class="form-control" name="email" placeholder="请输入邮箱" value="{{ prev_email }}">
+            </div>
+            <div class="mb-2">
+                <label>密码</label>
+                <input type="password" name="password" class="form-control" placeholder="请输入密码">
+            </div>
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" name="remember_me" value="1" id="checkDefault">
+                <label class="form-check-label mb-2" for=" checkDefault ">
+                    记住我
+                </label>
+            </div>
+            <div>
+                <button class="btn btn-primary w-100 mb-5">登录</button>
+            </div>
+        </form>
+    </div>
+
+    {% if login_error %}
+        <div class="custom-alert" id="loginErrorAlert">
+            邮箱或密码错误，请重新输入！
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const alertBox = document.getElementById('loginErrorAlert');
+                alertBox.classList.add('show');
+                setTimeout(() => {
+                    alertBox.classList.add('fade-out');
+                    setTimeout(() => alertBox.remove(), 300);
+                }, 3000);
+            });
+        </script>
+    {% endif %}
+
+{% endblock %}

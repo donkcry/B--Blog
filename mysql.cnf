@@ -1,0 +1,5 @@
+[client]
+database=blblog
+user=root
+password=LBL833641607
+default-character-set=utf8
