@@ -1,0 +1,30 @@
+# 虚拟环境（根据你用的环境工具选择，比如venv/pipenv/poetry）
+venv/
+.env
+Pipfile
+Pipfile.lock
+poetry.lock
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django相关
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+.env.local
+.env.prod
+.env.dev
+*.log
+local_settings.py
+
+# PyCharm/IDE配置
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
