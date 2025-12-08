@@ -5,12 +5,61 @@
 {% block title %}首页{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="{% static 'css/index.css' %}">
-    <link rel="stylesheet" href="{% static 'css/a.css' %}">
+    <style>
+        .card-header a {
+            color: rebeccapurple;
+            text-decoration: none;
+        }
+        .card-header a:hover {
+            color: blue; /* hover 时变蓝色 */
+        }
+
+
+        /* 分页按钮整体样式 */
+        .pagination .page-link {
+            color: #333; /* 普通按钮文字颜色 */
+            background-color: #f8f9fa; /* 普通按钮背景色 */
+            border-color: #1a1d20; /* 普通按钮边框色 */
+        }
+
+        /* 当前页按钮样式 */
+        .pagination .page-item.active .page-link {
+            color: #fff; /* 当前页文字颜色 */
+            background-color: #1a1d20; /* 当前页背景色（示例：蓝色） */
+            border-color: #1a1d20; /* 当前页边框色 */
+        }
+
+        /* 按钮hover样式 */
+        .pagination .page-link:hover {
+            color: #fff;
+            background-color: #5A496E; /* hover时背景色（示例：深一点的蓝色） */
+            border-color: #1a1d20;
+        }
+
+        /* 禁用状态按钮样式（可选） */
+        .pagination .page-item.disabled .page-link {
+            color: #a5a2a2;
+            background-color: #fff;
+            border-color: #a5a2a2;
+        }
+
+
+        /* 给分页导航栏添加底部间距 */
+        nav[aria-label="Page navigation"] {
+            margin-bottom: 30px; /* 数值可以根据需要调整，比如20px、40px等 */
+        }
+
+
+        /* 去除分页按钮的焦点边框 */
+        .pagination .page-link:focus {
+            outline: none;
+            box-shadow: none; /* 同时去除Bootstrap的焦点阴影 */
+        }
+    </style>
 {% endblock %}
 
 {% block main %}
-    <h1>BL博客</h1>
+    <h1 style="color: #a5a2a2">BL博客</h1>
     <div class="row row-cols-2 row-gap-4">
     {% for blog in blogs %}
         <div class="col">
@@ -32,6 +81,38 @@
                 </div>
             </div>
         </div>
+    {% empty %}
+        <div class="col-12 text-center">暂无博客内容</div>
     {% endfor %}
     </div>
+    {% if blogs.paginator.num_pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-5 py-1">
+            <ul class="pagination justify-content-center">
+                <!-- 上一页 -->
+                <li class="page-item {% if not blogs.has_previous %}disabled{% endif %}">
+                    <a class="page-link" href="?page={% if blogs.has_previous %}{{ blogs.previous_page_number }}{% else %}1{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">上一页</span>
+                    </a>
+                </li>
+
+                <!-- 页码列表（简化版：只显示当前页前后2页 + 首尾页） -->
+                {% for num in blogs.paginator.page_range %}
+                    {% if num == blogs.number %}
+                        <!-- 当前页 -->
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > blogs.number|add:-3 and num < blogs.number|add:3 %}
+                        <!-- 相邻页 -->
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- 下一页 -->
+                <li class="page-item {% if not blogs.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="?page={% if blogs.has_next %}{{ blogs.next_page_number }}{% else %}{{ blogs.paginator.num_pages }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">下一页</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    {% endif %}
 {% endblock %}

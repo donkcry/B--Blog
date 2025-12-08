@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}编辑个人信息{% endblock %}
+
+{% block head %}
+    <style>
+        .form-card {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid rgba(0,0,0,.125);
+            border-radius: 0.5rem;
+        }
+        .form-header {
+            padding: 1rem 1.25rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0,0,0,.125);
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+        .form-body {
+            padding: 1.5rem;
+        }
+        .form-message {
+            margin-bottom: 1rem;
+            transition: all 0.5s ease; /* 渐变动画 */
+        }
+    </style>
+{% endblock %}
+
+{% block main %}
+    <div class="form-card">
+        <!-- 表单头部 -->
+        <div class="form-header">
+            <h3 class="h5 mb-0">编辑个人信息</h3>
+        </div>
+
+        <!-- 表单主体 -->
+        <div class="form-body">
+            <!-- 提示消息 -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-success form-message" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- 前端自动隐藏：极简版（必生效） -->
+            <script>
+                // 3秒后自动隐藏所有提示框
+                setTimeout(() => {
+                    const msgBoxes = document.querySelectorAll('.form-message');
+                    msgBoxes.forEach(box => {
+                        box.style.opacity = 0;
+                        box.style.height = 0;
+                        box.style.marginBottom = 0;
+                        box.style.padding = 0; // 去掉内边距，彻底隐藏
+                        setTimeout(() => box.style.display = 'none', 500);
+                    });
+                }, 3000); // 3秒后执行，可改（比如2000=2秒）
+            </script>
+
+            <!-- 编辑表单（不变） -->
+            <form method="post">
+                {% csrf_token %}
+                <div class="row g-3">
+                    {% for field in form %}
+                        <div class="col-md-6">
+                            <label for="{{ field.id_for_label }}" class="form-label">
+                                {{ field.label }}
+                                {% if field.field.required %}
+                                    <span class="text-danger">*</span>
+                                {% endif %}
+                            </label>
+                            <input type="{{ field.field.widget.input_type }}"
+                                   name="{{ field.name }}"
+                                   id="{{ field.id_for_label }}"
+                                   class="form-control"
+                                   value="{{ field.value|default:'' }}"
+                                   {% if field.field.required %}required{% endif %}>
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ field.errors.0 }}
+                                </div>
+                            {% endif %}
+                            {% if field.help_text %}
+                                <div class="form-text">
+                                    {{ field.help_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-outline-dark">
+                        <i class="bi bi-save"></i> 保存修改
+                    </button>
+                    <a href="{% url 'private:user_profile' %}" class="btn btn-outline-dark">
+                        <i class="bi bi-arrow-left"></i> 返回个人中心
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

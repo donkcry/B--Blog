@@ -19,6 +19,7 @@ from django.urls import path, include
 
 import blog.urls
 import BLauth.urls
+import private.urls
     
 
 
@@ -27,4 +28,5 @@ urlpatterns = [
     path('',include(blog.urls)),
     path('BLauth/', include(BLauth.urls)),
     path('icon',include('icon.urls')),
+    path('private/',include('private.urls')),
 ]
