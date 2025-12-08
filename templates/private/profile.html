@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}个人中心{% endblock %}
+
+{% block head %}
+    <style>
+        .profile-header {
+            padding: 1.5rem;
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        /* 选项卡样式 */
+        .tab-nav {
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 1.5rem;
+        }
+        .tab-nav .nav-link {
+            color: #495057;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+        }
+        .tab-nav .nav-link.active {
+            color: #6610f2;
+            border-bottom-color: #6610f2;
+            background-color: transparent;
+        }
+        /* 搜索框 */
+        .search-bar {
+            margin-bottom: 1.5rem;
+        }
+        /* 两列布局 */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;  /* 列间距 */
+        }
+        /* 条目卡片 */
+        .item-card {
+            padding: 1.25rem;
+            background-color: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: background-color 0.2s;
+        }
+        .item-card:hover {
+            background-color: #f8f9fa;
+        }
+        /* 分页样式 */
+        .pagination {
+            margin-top: 2rem;
+            justify-content: center;
+        }
+        .empty-tip {
+            grid-column: 1 / -1;  /* 占满两列 */
+            padding: 3rem;
+            text-align: center;
+            color: #6c757d;
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+        }
+        .meta-text {
+            color: #495057;
+            font-size: 0.875rem;
+        }
+        /* 分页按钮整体样式 */
+        .pagination .page-link {
+            color: #333; /* 普通按钮文字颜色 */
+            background-color: #f8f9fa; /* 普通按钮背景色 */
+            border-color: #1a1d20; /* 普通按钮边框色 */
+        }
+
+        /* 当前页按钮样式 */
+        .pagination .page-item.active .page-link {
+            color: #fff; /* 当前页文字颜色 */
+            background-color: #1a1d20; /* 当前页背景色（示例：蓝色） */
+            border-color: #1a1d20; /* 当前页边框色 */
+        }
+
+        /* 按钮hover样式 */
+        .pagination .page-link:hover {
+            color: #fff;
+            background-color: #5A496E; /* hover时背景色（示例：深一点的蓝色） */
+            border-color: #1a1d20;
+        }
+
+        /* 禁用状态按钮样式（可选） */
+        .pagination .page-item.disabled .page-link {
+            color: #a5a2a2;
+            background-color: #fff;
+            border-color: #a5a2a2;
+        }
+        /* 去除分页按钮的焦点边框 */
+        .pagination .page-link:focus {
+            outline: none;
+            box-shadow: none; /* 同时去除Bootstrap的焦点阴影 */
+        }
+    </style>
+{% endblock %}
+
+{% block main %}
+    <div class="row">
+        <!-- 个人信息头部 -->
+        <div class="col-12 profile-header">
+            <div class="d-flex align-items-center">
+                <img src="{% static 'img/用户头像.png' %}" alt="用户头像" width="80" height="80" class="rounded-circle me-4">
+                <div>
+                    <h2 class="h4 mb-1">{{ user.username }}</h2>
+                    <p class="meta-text mb-0">
+                        注册时间：{{ user.date_joined|date:"Y-m-d H:i" }} |
+                        最后登录：{{ user.last_login|date:"Y-m-d H:i" }}
+                    </p>
+                </div>
+                <div class="ms-auto d-flex flex-column gap-2"> <!-- 关键：把d-flex改成d-flex flex-column，实现纵向排列 -->
+                    <a href="{% url 'private:edit_profile' %}" class="btn btn-outline-dark">
+                        <i class="bi bi-pencil-square"></i> 编辑个人信息
+                    </a>
+                    <!-- 注销账号按钮 -->
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#logoutVerifyModal">
+                        <i class="bi bi-trash"></i> 注销账号
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- 新增：验证模态框（邮箱+验证码+密码） -->
+        <div class="modal fade" id="logoutVerifyModal" tabindex="-1" aria-labelledby="logoutVerifyModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="logoutVerifyModalLabel">注销账号验证</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="logoutVerifyForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="verifyEmail" class="form-label">邮箱</label>
+                                <input type="email" class="form-control" id="verifyEmail" value="{{ user.email }}" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label for="verifyCode" class="form-label">邮箱验证码</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="verifyCode" placeholder="输入验证码" required>
+                                    <button type="button" class="btn btn-outline-secondary" id="sendVerifyCodeBtn">获取验证码</button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="verifyPassword" class="form-label">账号密码</label>
+                                <input type="password" class="form-control" id="verifyPassword" placeholder="输入密码" required>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-danger" id="toConfirmBtn">下一步</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新增：确认注销模态框 -->
+        <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="logoutConfirmModalLabel">确认注销账号</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-danger">你真的要注销账号吗？（此操作不可逆，想要再次发布博客需要重新注册账号）</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">再想想</button>
+                        <button type="button" class="btn btn-danger" id="confirmLogoutBtn">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- 选项卡导航 -->
+        <div class="col-12">
+            <ul class="nav tab-nav">
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'blogs' %}active{% endif %}" href="?tab=blogs">我的博客</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'comments' %}active{% endif %}" href="?tab=comments">我的评论</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 搜索框（居中+横向布局） -->
+        <div class="col-12 d-flex justify-content-center">
+            <div class="search-bar" style="width: 600px; max-width: 100%;">
+                <form method="get" class="d-flex align-items-center w-100">
+                    <input type="hidden" name="tab" value="{{ tab }}">
+                    <!-- 搜索框占满剩余宽度 -->
+                    <input type="search" name="q" class="form-control flex-grow-1"
+                           placeholder="{{ placeholder }}"
+                           value="{{ search_key }}">
+                    <!-- 按钮固定宽度 -->
+                    <button type="submit" class="btn btn-outline-dark ms-2" style="width: 80px;">
+                        <i class="bi bi-search"></i> 搜索
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 内容区域（两列布局） -->
+        <div class="col-12">
+            <div class="content-grid">
+                {% if data_list %}
+                    {% if tab == 'blogs' %}
+                        <!-- 博客列表 -->
+                        {% for blog in data_list %}
+                            <div class="item-card">
+                                <h4 class="h6 mb-2">
+                                    <a href="{% url 'blog:blog_detail' blog.id %}" class="text-primary text-decoration-none">
+                                        {{ blog.title }}
+                                    </a>
+                                </h4>
+                                <div class="meta-text mb-2">
+                                    <span>发布时间：{{ blog.edit_time|date:"Y-m-d H:i" }}</span> |
+                                    <span>分类：{{ blog.category.name }}</span> |
+                                    <span>评论数：{{ blog.comments.count }}</span>
+                                </div>
+                                <p class="text-dark mb-0">{{ blog.content|striptags|truncatechars:100 }}</p>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- 评论列表 -->
+                        {% for comment in data_list %}
+                            <div class="item-card">
+                                <div class="meta-text mb-2">
+                                    <span>评论时间：{{ comment.edit_time|date:"Y-m-d H:i" }}</span> |
+                                    <span>所属博客：
+                                    <a href="{% url 'blog:blog_detail' comment.blog.id %}" class="text-primary text-decoration-none">
+                                        {{ comment.blog.title|truncatechars:20 }}
+                                    </a>
+                                </span>
+                                </div>
+                                <p class="mb-0">
+                                    <a href="{% url 'private:comment_redirect' comment.id %}" class="text-dark text-decoration-none">
+                                        {{ comment.content|truncatechars:80 }}
+                                    </a>
+                                </p>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% else %}
+                    <!-- 空数据提示 -->
+                    <div class="empty-tip">
+                        <img src="{% static 'icon/empty.png' %}" alt="空数据" width="60" height="60" class="mb-2">
+                        <p>
+                            {% if tab == 'blogs' %}
+                                暂无博客内容{% if search_key %}（搜索“{{ search_key }}”无结果）{% endif %}
+                            {% else %}
+                                暂无评论内容{% if search_key %}（搜索“{{ search_key }}”无结果）{% endif %}
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 分页控件 -->
+        <div class="col-12">
+            {% if data_list.paginator.num_pages > 1 %}
+                <nav>
+                    <ul class="pagination">
+                        <!-- 上一页 -->
+                        {% if data_list.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?tab={{ tab }}&q={{ search_key }}&page={{ data_list.previous_page_number }}">上一页</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">上一页</span>
+                            </li>
+                        {% endif %}
+
+                        <!-- 页码 -->
+                        {% for num in data_list.paginator.page_range %}
+                            <li class="page-item {% if num == data_list.number %}active{% endif %}">
+                                <a class="page-link" href="?tab={{ tab }}&q={{ search_key }}&page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endfor %}
+
+                        <!-- 下一页 -->
+                        {% if data_list.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?tab={{ tab }}&q={{ search_key }}&page={{ data_list.next_page_number }}">下一页</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">下一页</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

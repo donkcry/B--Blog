@@ -2,6 +2,14 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
+    <style>
+        /* 下拉菜单项点击时的样式 */
+        .dropdown-item:active,
+        .dropdown-item:focus {
+            background-color: #e9ecef !important; /* 灰色背景 */
+            color: #212529 !important; /* 保持文字颜色（可选） */
+        }
+    </style>
     <meta charset="UTF-8">
     <title>BL博客-{% block title %}{% endblock %}</title>
     <link rel="icon" href="{% static 'icon/favicon.png' %}">
@@ -23,7 +31,7 @@
             </ul>
 
             <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search" action="{% url 'blog:search' %}" method="get">
-                <input type="search" name="q" class="form-control form-control-dark text-bg-light" placeholder="搜索...">
+                <input type="search" name="q" class="form-control form-control-dark text-bg-light" placeholder="搜索标题或内容...">
             </form>
 
             {% if user.is_authenticated %}
@@ -33,13 +41,17 @@
                         <img src="{% static 'img/用户头像.png' %}" alt="mdo" width="32" height="32" class="rounded-circle">
                     </a>
                     <ul class="dropdown-menu text-small">
+                        <li><a class="dropdown-item" href="{% url 'private:user_profile' %}">个人中心</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
                         <li><a class="dropdown-item" href="{% url 'BLauth:logout' %}">退出登录</a></li>
                     </ul>
                 </div>
             {% else %}
                 <div class="text-end">
-                    <a href="{% url 'BLauth:login' %}" type="button" class="btn btn-outline-light me-2">登录</a>
-                    <a href="{% url 'BLauth:register' %}" type="button" class="btn btn-info">注册</a>
+                    <a href="{% url 'BLauth:login' %}" type="button" class="btn btn-outline-info me-2">登录</a>
+                    <a href="{% url 'BLauth:register' %}" type="button" class="btn btn-outline-info">注册</a>
                 </div>
             {% endif %}
         </div>
