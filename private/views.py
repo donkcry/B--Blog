@@ -11,7 +11,7 @@ import random
 import string
 import json
 import traceback
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import get_user_model
 from .models import VerifyCode
 
@@ -74,8 +74,6 @@ def user_profile(request):
     return render(request, 'private/profile.html', context)
 
 
-
-
 # 修复后的评论跳转（兼容Django 5.x）
 @login_required
 def comment_redirect(request, comment_id):
@@ -118,9 +116,14 @@ class UserProfileForm(forms.ModelForm):
         new_email = cleaned_data.get('new_email')
         verify_code = cleaned_data.get('email_verify_code')
 
-        # 逻辑：如果填写了新邮箱（且和原邮箱不同），必须验证验证码
+        # 1. 校验新邮箱唯一性（如果填写了新邮箱且和原邮箱不同）
         if new_email and new_email != current_email:
-            # 1. 校验验证码是否存在且有效
+            # 检查新邮箱是否已被其他用户占用
+            if User.objects.filter(email=new_email).exclude(id=self.instance.id).exists():
+                self.add_error('new_email', '该邮箱已被其他账号绑定，请更换邮箱')
+                return cleaned_data  # 提前返回，不执行后续验证码校验
+
+            # 2. 校验验证码是否存在且有效
             try:
                 code_obj = VerifyCode.objects.filter(
                     user=self.instance,
@@ -129,6 +132,9 @@ class UserProfileForm(forms.ModelForm):
                 ).latest('created_at')
                 if not code_obj.is_valid():
                     self.add_error('email_verify_code', '验证码已过期，请重新获取')
+                else:
+                    # 验证码验证通过，立即删除该验证码（避免重复使用）
+                    code_obj.delete()
             except VerifyCode.DoesNotExist:
                 self.add_error('email_verify_code', '验证码错误或未获取，请重新输入')
         return cleaned_data
@@ -145,6 +151,9 @@ def edit_profile(request):
                 # 验证通过后，更新邮箱
                 request.user.email = new_email
                 request.user.save()
+                # 兜底：删除该用户所有关联的验证码（避免残留）
+                VerifyCode.objects.filter(user=request.user, email=new_email).delete()
+
             # 保存其他字段
             form.save()
 
@@ -152,7 +161,17 @@ def edit_profile(request):
             message_storage = messages.get_messages(request)
             message_storage.used = True
             messages.success(request, '个人信息修改成功！')
+
+            # 兼容AJAX请求：返回JSON或重定向
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'success', 'msg': '个人信息修改成功！'})
             return redirect('private:edit_profile')
+        else:
+            # 表单验证失败，兼容AJAX请求返回页面
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # 返回包含错误的页面HTML
+                html = render(request, 'private/edit_profile.html', {'form': form}).content
+                return HttpResponse(html, status=200)
     else:
         message_storage = messages.get_messages(request)
         message_storage.used = True
@@ -338,10 +357,15 @@ def send_email_change_code(request):
             new_email = data.get('new_email', '').strip()
             current_email = request.user.email
 
-            # 校验新邮箱是否和原邮箱重复
+            # 1. 校验新邮箱是否和原邮箱重复
             if new_email == current_email:
                 return JsonResponse({'status': 'error', 'msg': '新邮箱不能与原邮箱相同'})
-            # 校验新邮箱格式
+
+            # 2. 新增：校验新邮箱是否已被其他用户占用
+            if User.objects.filter(email=new_email).exclude(id=request.user.id).exists():
+                return JsonResponse({'status': 'error', 'msg': '该邮箱已被其他账号绑定，请更换邮箱'})
+
+            # 3. 校验新邮箱格式
             if not forms.EmailField().clean(new_email):
                 return JsonResponse({'status': 'error', 'msg': '邮箱格式错误'})
 

@@ -5,58 +5,65 @@
 
 {% block head %}
     <style>
-        .form-card { max-width: 800px; margin: 0 auto; border: 1px solid rgba(0,0,0,.125); border-radius: 0.5rem; }
-        .form-header { padding: 1rem 1.25rem; background-color: #f8f9fa; border-bottom: 1px solid rgba(0,0,0,.125); border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
-        .form-body { padding: 1.5rem; }
-        .form-message { margin-bottom: 1rem; transition: all 0.5s ease; }
-        .code-btn { width: 120px; }
-        .code-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        /* 提示框样式 */
-        .alert-custom {
+        /* 核心：深色悬浮提示框样式 */
+        .floating-alert {
+            position: fixed; /* 悬浮在页面顶部 */
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px); /* 初始上移隐藏 */
             background-color: #333; /* 深色背景 */
             color: #fff; /* 白色文字 */
-            border: none;
+            padding: 10px 20px;
             border-radius: 4px;
-            padding: 0.8rem 1rem;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 9999; /* 最上层显示 */
+            opacity: 0; /* 默认隐藏 */
+            transition: all 0.5s ease; /* 渐变动画 */
+        }
+        /* 提示框显示状态 */
+        .floating-alert.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0); /* 显示时回到原位 */
+        }
+
+        /* 原有表单样式保留，仅移除弹窗相关样式 */
+        .form-card {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid rgba(0,0,0,.125);
+            border-radius: 0.5rem;
+            margin-top: 30px;
+        }
+        .form-header {
+            padding: 1rem 1.25rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0,0,0,.125);
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+        .form-body { padding: 1.5rem; }
+        .code-btn {
+            width: 120px;
+        }
+        .code-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
     </style>
 {% endblock %}
 
 {% block main %}
+    <!-- 1. 悬浮提示框容器（核心新增） -->
+    <div id="floatingAlert" class="floating-alert">
+        <span id="alertText"></span>
+    </div>
+
+    <!-- 2. 原有表单卡片 -->
     <div class="form-card">
         <div class="form-header">
             <h3 class="h5 mb-0">编辑个人信息</h3>
         </div>
         <div class="form-body">
-            <!-- 美化弹窗（Modal）HTML 结构：放在 form-body 内、表单之前 -->
-            <div class="modal fade" id="customAlertModal" tabindex="-1" aria-labelledby="customAlertModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-sm">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="customAlertModalLabel">提示</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p id="alertMessage" class="mb-0"></p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">确定</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 新的提示消息（仿图中样式） -->
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-custom form-message" role="alert">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-
             <form method="post" id="profileForm">
                 {% csrf_token %}
                 <div class="row g-3">
@@ -128,31 +135,31 @@
                 </div>
             </form>
 
-            <!-- 合并后的单个 script 标签（包含所有逻辑） -->
             <script>
-                // 自动隐藏提示框（适配新样式）
-                setTimeout(() => {
-                    const msgBoxes = document.querySelectorAll('.form-message');
-                    msgBoxes.forEach(box => {
-                        // 渐变消失动画
-                        box.style.transition = 'all 0.5s ease';
-                        box.style.opacity = 0;
-                        box.style.height = 0;
-                        box.style.padding = 0;
-                        box.style.marginBottom = 0;
-                        // 完全消失后隐藏元素
-                        setTimeout(() => box.style.display = 'none', 500);
-                    });
-                }, 3000); // 3秒后开始消失
+                // 核心：显示悬浮提示框的函数（3秒后自动消失）
+                function showFloatingAlert(message) {
+                    const alertBox = document.getElementById('floatingAlert');
+                    const alertText = document.getElementById('alertText');
 
-                // 2. 自定义美化弹窗函数（新增核心）
-                function showCustomAlert(message) {
-                    document.getElementById('alertMessage').textContent = message;
-                    const modal = new bootstrap.Modal(document.getElementById('customAlertModal'));
-                    modal.show();
+                    // 设置提示文本
+                    alertText.textContent = message;
+                    // 显示提示框
+                    alertBox.classList.add('show');
+
+                    // 3秒后渐变隐藏
+                    setTimeout(() => {
+                        alertBox.classList.remove('show');
+                    }, 3000);
                 }
 
-                // 3. 发送邮箱验证码逻辑（改造后，替换所有 alert）
+                // 1. 页面加载时，显示django messages提示（比如保存成功）
+                {% if messages %}
+                    {% for message in messages %}
+                        showFloatingAlert("{{ message }}");
+                    {% endfor %}
+                {% endif %}
+
+                // 2. 发送邮箱验证码逻辑（提示改为悬浮框）
                 const sendEmailCodeBtn = document.getElementById('sendEmailCodeBtn');
                 const newEmailInput = document.getElementById('{{ form.new_email.id_for_label }}');
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -160,7 +167,7 @@
                 sendEmailCodeBtn.addEventListener('click', async () => {
                     const newEmail = newEmailInput.value.trim();
                     if (!newEmail) {
-                        showCustomAlert('请先输入新邮箱'); // 替换 alert
+                        showFloatingAlert('请先输入新邮箱'); // 悬浮提示
                         return;
                     }
 
@@ -177,7 +184,7 @@
                             body: JSON.stringify({ new_email: newEmail })
                         });
                         const data = await response.json();
-                        showCustomAlert(data.msg); // 替换 alert
+                        showFloatingAlert(data.msg); // 悬浮提示
 
                         if (data.status === 'success') {
                             let count = 60;
@@ -195,12 +202,45 @@
                             sendEmailCodeBtn.textContent = '发送验证码';
                         }
                     } catch (e) {
-                        showCustomAlert('发送请求失败，请重试'); // 替换 alert
+                        showFloatingAlert('发送请求失败，请重试'); // 悬浮提示
                         sendEmailCodeBtn.disabled = false;
                         sendEmailCodeBtn.textContent = '发送验证码';
                     }
                 });
+
+                // 3. 表单提交逻辑（提示改为悬浮框）
+                const profileForm = document.getElementById('profileForm');
+                profileForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    const formData = new FormData(profileForm);
+                    try {
+                        const response = await fetch(window.location.href, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+
+                        const html = await response.text();
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = html;
+
+                        // 检查表单错误
+                        const errorElements = tempDiv.querySelectorAll('.text-danger small');
+                        if (errorElements.length > 0) {
+                            const firstError = errorElements[0].textContent.trim();
+                            showFloatingAlert(firstError); // 悬浮提示错误
+                        } else {
+                            showFloatingAlert('个人信息修改成功！'); // 悬浮提示成功
+                            setTimeout(() => window.location.reload(), 1500);
+                        }
+                    } catch (err) {
+                        showFloatingAlert('网络错误，请稍后重试！'); // 悬浮提示
+                    }
+                });
             </script>
-        </div> <!-- 补全：闭合 .form-body -->
-    </div> <!-- 补全：闭合 .form-card -->
+        </div>
+    </div>
 {% endblock %}
