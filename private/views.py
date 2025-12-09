@@ -89,15 +89,49 @@ def comment_redirect(request, comment_id):
 
 # 个人信息编辑表单
 class UserProfileForm(forms.ModelForm):
+    # 新增：新邮箱输入框（用于修改邮箱时填写）
+    new_email = forms.EmailField(
+        required=False,
+        label="新电子邮箱地址",
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+    # 新增：邮箱验证码输入框
+    email_verify_code = forms.CharField(
+        required=False,
+        label="邮箱验证码",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '输入6位验证码'})
+    )
+
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name']  # 可编辑的字段
+        fields = ['username', 'email', 'first_name', 'last_name']  # 保留原字段
         widgets = {
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),  # 原邮箱设为只读
             'username': forms.TextInput(attrs={'class': 'form-control'}),
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        current_email = self.instance.email  # 当前用户的原邮箱
+        new_email = cleaned_data.get('new_email')
+        verify_code = cleaned_data.get('email_verify_code')
+
+        # 逻辑：如果填写了新邮箱（且和原邮箱不同），必须验证验证码
+        if new_email and new_email != current_email:
+            # 1. 校验验证码是否存在且有效
+            try:
+                code_obj = VerifyCode.objects.filter(
+                    user=self.instance,
+                    email=new_email,
+                    code=verify_code
+                ).latest('created_at')
+                if not code_obj.is_valid():
+                    self.add_error('email_verify_code', '验证码已过期，请重新获取')
+            except VerifyCode.DoesNotExist:
+                self.add_error('email_verify_code', '验证码错误或未获取，请重新输入')
+        return cleaned_data
 
 
 @login_required
@@ -105,20 +139,23 @@ def edit_profile(request):
     if request.method == 'POST':
         form = UserProfileForm(request.POST, instance=request.user)
         if form.is_valid():
+            # 处理邮箱修改逻辑
+            new_email = form.cleaned_data.get('new_email')
+            if new_email and new_email != request.user.email:
+                # 验证通过后，更新邮箱
+                request.user.email = new_email
+                request.user.save()
+            # 保存其他字段
             form.save()
-            # 1. 先清空残留的旧消息，避免叠加
+
+            # 清空旧消息 + 添加成功消息
             message_storage = messages.get_messages(request)
-            message_storage.used = True  # 标记所有消息为「已读」，自动从session删除
-
-            # 2. 添加新的成功消息
+            message_storage.used = True
             messages.success(request, '个人信息修改成功！')
-
-            # 3. 重定向（必须重定向，避免刷新页面重复提交+消息残留）
-            return redirect('private:edit_profile')  # 重定向回编辑页面（也可改回个人中心）
+            return redirect('private:edit_profile')
     else:
-        # 进入编辑页面时，主动清空残留的消息（关键！）
         message_storage = messages.get_messages(request)
-        message_storage.used = True  # 标记已读，session中删除消息
+        message_storage.used = True
         form = UserProfileForm(instance=request.user)
 
     context = {'form': form}
@@ -290,4 +327,44 @@ def change_password(request):
 
         return JsonResponse({'status': 'success', 'msg': '密码修改成功，请重新登录'})
 
+    return JsonResponse({'status': 'error', 'msg': '请求方式错误'})
+
+
+@login_required
+def send_email_change_code(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            new_email = data.get('new_email', '').strip()
+            current_email = request.user.email
+
+            # 校验新邮箱是否和原邮箱重复
+            if new_email == current_email:
+                return JsonResponse({'status': 'error', 'msg': '新邮箱不能与原邮箱相同'})
+            # 校验新邮箱格式
+            if not forms.EmailField().clean(new_email):
+                return JsonResponse({'status': 'error', 'msg': '邮箱格式错误'})
+
+            # 生成6位验证码
+            code = ''.join(random.choices(string.digits, k=6))
+            # 删除该用户旧的验证码（避免重复）
+            VerifyCode.objects.filter(user=request.user, email=new_email).delete()
+            # 保存新验证码（关联新邮箱）
+            VerifyCode.objects.create(
+                user=request.user,
+                code=code,
+                email=new_email
+            )
+
+            # 发送邮件
+            send_mail(
+                subject='邮箱修改验证码',
+                message=f'你的邮箱修改验证码为：{code}（5分钟内有效），请勿泄露给他人！',
+                from_email=None,
+                recipient_list=[new_email],
+                fail_silently=False,
+            )
+            return JsonResponse({'status': 'success', 'msg': '验证码已发送至新邮箱'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'msg': f'发送失败：{str(e)}'})
     return JsonResponse({'status': 'error', 'msg': '请求方式错误'})

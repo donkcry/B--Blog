@@ -5,95 +5,119 @@
 
 {% block head %}
     <style>
-        .form-card {
-            max-width: 800px;
-            margin: 0 auto;
-            border: 1px solid rgba(0,0,0,.125);
-            border-radius: 0.5rem;
-        }
-        .form-header {
-            padding: 1rem 1.25rem;
-            background-color: #f8f9fa;
-            border-bottom: 1px solid rgba(0,0,0,.125);
-            border-top-left-radius: 0.5rem;
-            border-top-right-radius: 0.5rem;
-        }
-        .form-body {
-            padding: 1.5rem;
-        }
-        .form-message {
-            margin-bottom: 1rem;
-            transition: all 0.5s ease; /* 渐变动画 */
-        }
+        .form-card { max-width: 800px; margin: 0 auto; border: 1px solid rgba(0,0,0,.125); border-radius: 0.5rem; }
+        .form-header { padding: 1rem 1.25rem; background-color: #f8f9fa; border-bottom: 1px solid rgba(0,0,0,.125); border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
+        .form-body { padding: 1.5rem; }
+        .form-message { margin-bottom: 1rem; transition: all 0.5s ease; }
+        .code-btn { width: 120px; }
+        .code-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        /* 提示框样式 */
+        .alert-custom {
+            background-color: #333; /* 深色背景 */
+            color: #fff; /* 白色文字 */
+            border: none;
+            border-radius: 4px;
+            padding: 0.8rem 1rem;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
     </style>
 {% endblock %}
 
 {% block main %}
     <div class="form-card">
-        <!-- 表单头部 -->
         <div class="form-header">
             <h3 class="h5 mb-0">编辑个人信息</h3>
         </div>
-
-        <!-- 表单主体 -->
         <div class="form-body">
-            <!-- 提示消息 -->
+            <!-- 美化弹窗（Modal）HTML 结构：放在 form-body 内、表单之前 -->
+            <div class="modal fade" id="customAlertModal" tabindex="-1" aria-labelledby="customAlertModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="customAlertModalLabel">提示</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p id="alertMessage" class="mb-0"></p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">确定</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 新的提示消息（仿图中样式） -->
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-success form-message" role="alert">
+                    <div class="alert alert-custom form-message" role="alert">
                         {{ message }}
                     </div>
                 {% endfor %}
             {% endif %}
 
-            <!-- 前端自动隐藏：极简版（必生效） -->
-            <script>
-                // 3秒后自动隐藏所有提示框
-                setTimeout(() => {
-                    const msgBoxes = document.querySelectorAll('.form-message');
-                    msgBoxes.forEach(box => {
-                        box.style.opacity = 0;
-                        box.style.height = 0;
-                        box.style.marginBottom = 0;
-                        box.style.padding = 0; // 去掉内边距，彻底隐藏
-                        setTimeout(() => box.style.display = 'none', 500);
-                    });
-                }, 3000); // 3秒后执行，可改（比如2000=2秒）
-            </script>
-
-            <!-- 编辑表单（不变） -->
-            <form method="post">
+            <form method="post" id="profileForm">
                 {% csrf_token %}
                 <div class="row g-3">
-                    {% for field in form %}
-                        <div class="col-md-6">
-                            <label for="{{ field.id_for_label }}" class="form-label">
-                                {{ field.label }}
-                                {% if field.field.required %}
-                                    <span class="text-danger">*</span>
-                                {% endif %}
-                            </label>
-                            <input type="{{ field.field.widget.input_type }}"
-                                   name="{{ field.name }}"
-                                   id="{{ field.id_for_label }}"
-                                   class="form-control"
-                                   value="{{ field.value|default:'' }}"
-                                   {% if field.field.required %}required{% endif %}>
-                            {% if field.errors %}
-                                <div class="text-danger small mt-1">
-                                    {{ field.errors.0 }}
-                                </div>
-                            {% endif %}
-                            {% if field.help_text %}
-                                <div class="form-text">
-                                    {{ field.help_text }}
-                                </div>
-                            {% endif %}
+                    <!-- 原邮箱（只读） -->
+                    <div class="col-md-6">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            {{ form.email.label }}
+                            <span class="text-danger">*</span>
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 新邮箱输入框 -->
+                    <div class="col-md-6">
+                        <label for="{{ form.new_email.id_for_label }}" class="form-label">
+                            {{ form.new_email.label }}
+                        </label>
+                        {{ form.new_email }}
+                        {% if form.new_email.errors %}
+                            <div class="text-danger small mt-1">{{ form.new_email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 邮箱验证码输入框 + 发送按钮 -->
+                    <div class="col-md-6">
+                        <label for="{{ form.email_verify_code.id_for_label }}" class="form-label">
+                            {{ form.email_verify_code.label }}
+                        </label>
+                        <div class="input-group">
+                            {{ form.email_verify_code }}
+                            <button type="button" class="btn btn-outline-secondary code-btn" id="sendEmailCodeBtn">
+                                发送验证码
+                            </button>
                         </div>
+                        {% if form.email_verify_code.errors %}
+                            <div class="text-danger small mt-1">{{ form.email_verify_code.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    {% for field in form %}
+                        {% if field.name not in 'email,new_email,email_verify_code' %}
+                            <div class="col-md-6">
+                                <label for="{{ field.id_for_label }}" class="form-label">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
+                                {% endif %}
+                                {% if field.help_text %}
+                                    <div class="form-text">{{ field.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 </div>
 
-                <!-- 操作按钮 -->
                 <div class="mt-4 d-flex gap-2">
                     <button type="submit" class="btn btn-outline-dark">
                         <i class="bi bi-save"></i> 保存修改
@@ -103,6 +127,80 @@
                     </a>
                 </div>
             </form>
-        </div>
-    </div>
+
+            <!-- 合并后的单个 script 标签（包含所有逻辑） -->
+            <script>
+                // 自动隐藏提示框（适配新样式）
+                setTimeout(() => {
+                    const msgBoxes = document.querySelectorAll('.form-message');
+                    msgBoxes.forEach(box => {
+                        // 渐变消失动画
+                        box.style.transition = 'all 0.5s ease';
+                        box.style.opacity = 0;
+                        box.style.height = 0;
+                        box.style.padding = 0;
+                        box.style.marginBottom = 0;
+                        // 完全消失后隐藏元素
+                        setTimeout(() => box.style.display = 'none', 500);
+                    });
+                }, 3000); // 3秒后开始消失
+
+                // 2. 自定义美化弹窗函数（新增核心）
+                function showCustomAlert(message) {
+                    document.getElementById('alertMessage').textContent = message;
+                    const modal = new bootstrap.Modal(document.getElementById('customAlertModal'));
+                    modal.show();
+                }
+
+                // 3. 发送邮箱验证码逻辑（改造后，替换所有 alert）
+                const sendEmailCodeBtn = document.getElementById('sendEmailCodeBtn');
+                const newEmailInput = document.getElementById('{{ form.new_email.id_for_label }}');
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                sendEmailCodeBtn.addEventListener('click', async () => {
+                    const newEmail = newEmailInput.value.trim();
+                    if (!newEmail) {
+                        showCustomAlert('请先输入新邮箱'); // 替换 alert
+                        return;
+                    }
+
+                    sendEmailCodeBtn.disabled = true;
+                    sendEmailCodeBtn.textContent = '发送中...';
+
+                    try {
+                        const response = await fetch("{% url 'private:send_email_change_code' %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: JSON.stringify({ new_email: newEmail })
+                        });
+                        const data = await response.json();
+                        showCustomAlert(data.msg); // 替换 alert
+
+                        if (data.status === 'success') {
+                            let count = 60;
+                            const timer = setInterval(() => {
+                                sendEmailCodeBtn.textContent = `${count}秒后重试`;
+                                count--;
+                                if (count < 0) {
+                                    clearInterval(timer);
+                                    sendEmailCodeBtn.disabled = false;
+                                    sendEmailCodeBtn.textContent = '发送验证码';
+                                }
+                            }, 1000);
+                        } else {
+                            sendEmailCodeBtn.disabled = false;
+                            sendEmailCodeBtn.textContent = '发送验证码';
+                        }
+                    } catch (e) {
+                        showCustomAlert('发送请求失败，请重试'); // 替换 alert
+                        sendEmailCodeBtn.disabled = false;
+                        sendEmailCodeBtn.textContent = '发送验证码';
+                    }
+                });
+            </script>
+        </div> <!-- 补全：闭合 .form-body -->
+    </div> <!-- 补全：闭合 .form-card -->
 {% endblock %}

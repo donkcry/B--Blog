@@ -18,4 +18,5 @@ urlpatterns = [
     path('send_change_pwd_code/', views.send_change_pwd_verify_code, name='send_change_pwd_code'),
     # 新增：确认修改密码
     path('change_password/', views.change_password, name='change_password'),
+    path('send-email-change-code/', views.send_email_change_code, name='send_email_change_code'),
 ]
