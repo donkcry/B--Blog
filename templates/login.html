@@ -13,23 +13,21 @@
             left: 50%;
             transform: translateX(-50%);
             padding: 15px 30px;
-            background: #1a1d20;
             color: white;
             border-radius: 5px;
             z-index: 9999;
-            /* 初始隐藏，通过JS控制显示 */
             opacity: 0;
             transition: opacity 0.3s ease-in-out, top 0.3s ease-in-out;
-            /* 避免遮挡点击 */
             pointer-events: none;
         }
-        /* 提示框显示状态 */
+        .custom-alert.success { background: #1a1d20; }
+        .custom-alert.error { background: #1a1d20; }
+        .custom-alert.info { background: darkred; }
         .custom-alert.show {
             opacity: 1;
-            top: 30px; /* 轻微位移动画 */
+            top: 30px;
             pointer-events: auto;
         }
-        /* 自动消失的淡出动画 */
         .custom-alert.fade-out {
             opacity: 0;
             top: 20px;
@@ -38,10 +36,9 @@
 {% endblock %}
 
 {% block main %}
-
     <div style="max-width: 330px" class="m-auto">
         <h1 class="text-center">登录</h1>
-        <form action="" method="post">
+        <form id="loginForm" action="" method="post">
             {% csrf_token %}
             <div class="mb-2">
                 <label>邮箱</label>
@@ -61,25 +58,89 @@
                 <a href="{% url 'BLauth:forgot_password' %}" class="text-dark">忘记密码？</a>
             </div>
             <div>
-                <button class="btn btn-outline-dark w-100 mb-5">登录</button>
+                <button class="btn btn-outline-dark w-100 mb-5" type="submit">登录</button>
             </div>
         </form>
     </div>
 
+    <!-- 弹窗容器 -->
     {% if login_error %}
-        <div class="custom-alert" id="loginErrorAlert">
+        <div class="custom-alert error" id="loginErrorAlert">
             邮箱或密码错误，请重新输入！
         </div>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const alertBox = document.getElementById('loginErrorAlert');
-                alertBox.classList.add('show');
-                setTimeout(() => {
-                    alertBox.classList.add('fade-out');
-                    setTimeout(() => alertBox.remove(), 300);
-                }, 3000);
-            });
-        </script>
     {% endif %}
 
+    {% if empty_error %}
+        <div class="custom-alert error" id="emptyErrorAlert">
+            邮箱和密码均为必填项！
+        </div>
+    {% endif %}
+
+    {% if register_success %}
+        <div class="custom-alert success" id="registerSuccessAlert">
+            注册成功！请登录
+        </div>
+    {% endif %}
+
+    <script>
+        // 全局弹窗函数
+        function showCustomAlert(message, type = 'info', duration = 3000) {
+            const oldAlert = document.querySelector('.custom-alert');
+            if (oldAlert) oldAlert.remove();
+            const alertBox = document.createElement('div');
+            alertBox.className = `custom-alert ${type}`;
+            alertBox.innerText = message;
+            document.body.appendChild(alertBox);
+            setTimeout(() => alertBox.classList.add('show'), 10);
+            setTimeout(() => {
+                alertBox.classList.add('fade-out');
+                setTimeout(() => alertBox.remove(), 300);
+            }, duration);
+        }
+
+        // 前端表单校验（阻止空提交）
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            loginForm.addEventListener('submit', function(e) {
+                const email = this.querySelector('input[name="email"]').value.trim();
+                const password = this.querySelector('input[name="password"]').value.trim();
+
+                // 前端拦截空值
+                if (!email || !password) {
+                    e.preventDefault(); // 阻止表单提交
+                    showCustomAlert('邮箱和密码均为必填项！', 'error');
+                    return;
+                }
+            });
+
+            // 显示后端返回的弹窗
+            const loginAlert = document.getElementById('loginErrorAlert');
+            const emptyAlert = document.getElementById('emptyErrorAlert');
+            const registerAlert = document.getElementById('registerSuccessAlert');
+
+            if (loginAlert) {
+                loginAlert.classList.add('show');
+                setTimeout(() => {
+                    loginAlert.classList.add('fade-out');
+                    setTimeout(() => loginAlert.remove(), 300);
+                }, 3000);
+            }
+
+            if (emptyAlert) {
+                emptyAlert.classList.add('show');
+                setTimeout(() => {
+                    emptyAlert.classList.add('fade-out');
+                    setTimeout(() => emptyAlert.remove(), 300);
+                }, 3000);
+            }
+
+            if (registerAlert) {
+                registerAlert.classList.add('show');
+                setTimeout(() => {
+                    registerAlert.classList.add('fade-out');
+                    setTimeout(() => registerAlert.remove(), 300);
+                }, 3000);
+            }
+        });
+    </script>
 {% endblock %}

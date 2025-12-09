@@ -13,30 +13,41 @@ import json
 User = get_user_model()
 
 # Create your views here.
-@require_http_methods(['GET','POST'])
+@require_http_methods(['GET', 'POST'])
 def BLlogin(request):
     if request.method == 'GET':
         context = {
             'login_error': request.session.pop('login_error', False),
             'prev_email': request.session.pop('prev_email', ''),
+            'empty_error': request.session.pop('empty_error', False),  # 新增：空值错误标识
+            'register_success': request.session.pop('register_success', False),
         }
         return render(request, 'login.html', context)
     else:
+        # 1. 先校验是否为空提交
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '').strip()
+        if not email or not password:
+            request.session['empty_error'] = True  # 空值错误
+            request.session['prev_email'] = email
+            request.session.set_expiry(5)
+            return redirect(reverse('BLauth:login'))  # 强制返回登录页，避免跳注册
+
+        # 2. 表单验证
         form = LoginForm(request.POST)
-        prev_email = request.POST.get('email', '')
+        prev_email = email
         if form.is_valid():
-            email = form.cleaned_data.get('email')
-            password = form.cleaned_data.get('password')
             remember_me = form.cleaned_data.get('remember_me')
-            user=User.objects.filter(email=email).first()
+            user = User.objects.filter(email=email).first()
             if user and user.check_password(password):
-                login(request,user)
+                login(request, user)
                 if not remember_me:
                     request.session.set_expiry(0)
                 else:
                     request.session.set_expiry(None)
                 return redirect('/index')
 
+        # 3. 验证失败（邮箱/密码错误）
         request.session['login_error'] = True
         request.session['prev_email'] = prev_email
         request.session.set_expiry(5)
@@ -45,6 +56,7 @@ def BLlogin(request):
 def BLlogout(request):
     logout(request)
     return redirect('/index')
+
 
 @require_http_methods(['GET','POST'])
 def register(request):
@@ -57,10 +69,14 @@ def register(request):
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
             User.objects.create_user(username=username, email=email, password=password)
-            return redirect(resolve_url('BLauth:login'))
+            # 修复：直接传递上下文，而非依赖Session
+            return render(request, 'login.html', {'register_success': True})
         else:
-            print(form.errors)
-            return redirect(resolve_url('BLauth:register'))
+            # 将错误信息传递到前端
+            context = {'form': form}
+            return render(request, 'register.html', context)
+
+
 
 def send_email_captcha(request):
     email=request.GET.get('email')
