@@ -72,21 +72,18 @@
             background-color: #f8f9fa; /* 普通按钮背景色 */
             border-color: #1a1d20; /* 普通按钮边框色 */
         }
-
         /* 当前页按钮样式 */
         .pagination .page-item.active .page-link {
             color: #fff; /* 当前页文字颜色 */
-            background-color: #1a1d20; /* 当前页背景色（示例：蓝色） */
+            background-color: #1a1d20; /* 当前页背景色 */
             border-color: #1a1d20; /* 当前页边框色 */
         }
-
         /* 按钮hover样式 */
         .pagination .page-link:hover {
             color: #fff;
-            background-color: #5A496E; /* hover时背景色（示例：深一点的蓝色） */
+            background-color: #5A496E; /* hover时背景色 */
             border-color: #1a1d20;
         }
-
         /* 禁用状态按钮样式（可选） */
         .pagination .page-item.disabled .page-link {
             color: #a5a2a2;
@@ -98,10 +95,70 @@
             outline: none;
             box-shadow: none; /* 同时去除Bootstrap的焦点阴影 */
         }
+
+        /* ========== 保留当前弹窗样式（和截图一致） ========== */
+        .modal-content {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            background-color: #f5f5f5;
+        }
+        .modal-title {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .modal-body {
+            padding: 15px;
+        }
+        .modal-footer {
+            padding: 10px 15px;
+            border-top: 1px solid #eee;
+            background-color: #f5f5f5;
+        }
+        .modal-footer .btn {
+            padding: 5px 20px;
+        }
+        .modal-footer .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: #fff;
+        }
+        .modal-footer .btn-primary:hover {
+            background-color: #0069d9;
+        }
+
+        /* ========== 悬浮提示框（仅用于信息提示） ========== */
+        .floating-alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            background-color: #333;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+        .floating-alert.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
     </style>
 {% endblock %}
 
 {% block main %}
+    <!-- 悬浮提示框（仅用于信息提示） -->
+    <div id="floatingAlert" class="floating-alert">
+        <span id="alertText"></span>
+    </div>
+
     <div class="row">
         <!-- 个人信息头部 -->
         <div class="col-12 profile-header">
@@ -114,16 +171,14 @@
                         最后登录：{{ user.last_login|date:"Y-m-d H:i" }}
                     </p>
                 </div>
-                <div class="ms-auto d-flex flex-column gap-2"> <!-- 关键：把d-flex改成d-flex flex-column，实现纵向排列 -->
+                <div class="ms-auto d-flex flex-column gap-2">
                     <a href="{% url 'private:edit_profile' %}" class="btn btn-outline-dark">
                         <i class="bi bi-pencil-square"></i> 编辑个人信息
                     </a>
-
                     <!-- 修改密码按钮 -->
                     <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#changePwdModal">
                         <i class="bi bi-key"></i> 修改密码
                     </button>
-
                     <!-- 注销账号按钮 -->
                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#logoutVerifyModal">
                         <i class="bi bi-trash"></i> 注销账号
@@ -132,7 +187,7 @@
             </div>
         </div>
 
-        <!-- 注销账号模态框（补充缺失的ID） -->
+        <!-- 注销账号模态框（保留当前样式） -->
         <div class="modal fade" id="logoutVerifyModal" tabindex="-1" aria-labelledby="logoutVerifyModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -151,7 +206,6 @@
                                 <label for="verifyCode" class="form-label">邮箱验证码</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="verifyCode" placeholder="输入6位验证码" required>
-                                    <!-- 补充 sendVerifyCodeBtn ID -->
                                     <button type="button" class="btn btn-outline-secondary" id="sendVerifyCodeBtn">获取验证码</button>
                                 </div>
                             </div>
@@ -163,14 +217,36 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                        <!-- 补充 directConfirmBtn ID -->
                         <button type="button" class="btn btn-danger" id="directConfirmBtn">确认注销</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 修改密码模态框（仅验证验证码） -->
+
+
+        <!-- 新增：二次确认注销的模态框（和现有弹窗样式一致） -->
+        <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="logoutConfirmModalLabel">确认注销</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        你真的要注销账号吗？有关你在此的一切都会消失！且此操作不可逆！
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-danger" id="finalLogoutBtn">确定注销</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- 修改密码模态框（保留当前样式） -->
         <div class="modal fade" id="changePwdModal" tabindex="-1" aria-labelledby="changePwdModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -228,11 +304,9 @@
             <div class="search-bar" style="width: 600px; max-width: 100%;">
                 <form method="get" class="d-flex align-items-center w-100">
                     <input type="hidden" name="tab" value="{{ tab }}">
-                    <!-- 搜索框占满剩余宽度 -->
                     <input type="search" name="q" class="form-control flex-grow-1"
                            placeholder="{{ placeholder }}"
                            value="{{ search_key }}">
-                    <!-- 按钮固定宽度 -->
                     <button type="submit" class="btn btn-outline-dark ms-2" style="width: 80px;">
                         <i class="bi bi-search"></i> 搜索
                     </button>
@@ -340,24 +414,27 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 【关键修复】确保csrfToken全局可访问（在DOMContentLoaded内顶级定义）
-            let csrfToken = '';
-            const csrfElement = document.querySelector('[name=csrfmiddlewaretoken]');
-            if (csrfElement) {
-                csrfToken = csrfElement.value;
-            } else {
-                // 兼容Django CSRF cookie方式（备选方案）
-                csrfToken = getCookie('csrftoken');
+            // 全局CSRF Token
+            let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+
+            // 1. 悬浮提示框函数（仅用于信息提示）
+            function showFloatingAlert(message) {
+                const alertBox = document.getElementById('floatingAlert');
+                const alertText = document.getElementById('alertText');
+                alertText.textContent = message;
+                alertBox.classList.add('show');
+                setTimeout(() => {
+                    alertBox.classList.remove('show');
+                }, 3000);
             }
 
-            // 辅助函数：获取CSRF Cookie（Django默认逻辑）
+            // 2. 获取Cookie辅助函数
             function getCookie(name) {
                 let cookieValue = null;
                 if (document.cookie && document.cookie !== '') {
                     const cookies = document.cookie.split(';');
                     for (let i = 0; i < cookies.length; i++) {
                         const cookie = cookies[i].trim();
-                        // 判断cookie名称是否匹配
                         if (cookie.substring(0, name.length + 1) === (name + '=')) {
                             cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                             break;
@@ -367,7 +444,7 @@
                 return cookieValue;
             }
 
-            // 1. 发送注销验证码逻辑（原有代码，保留）
+            // 3. 发送注销验证码逻辑（提示用悬浮框）
             const sendVerifyCodeBtn = document.getElementById('sendVerifyCodeBtn');
             if (sendVerifyCodeBtn) {
                 sendVerifyCodeBtn.addEventListener('click', async function() {
@@ -375,24 +452,17 @@
                     this.textContent = '发送中...';
 
                     try {
-                        const response = await fetch("{% url 'private:send_logout_code' %}", {
+                        const response = await fetch("{% url 'private:send_logout_verify_code' %}", {
                             method: 'POST',
                             headers: {
                                 'X-CSRFToken': csrfToken,
                                 'Content-Type': 'application/json'
                             }
                         });
+                        const data = await response.json();
+                        showFloatingAlert(data.msg); // 悬浮提示
 
-                        const contentType = response.headers.get('content-type');
-                        let result;
-                        if (contentType && contentType.includes('application/json')) {
-                            result = await response.json();
-                        } else {
-                            result = { status: 'error', msg: '服务器返回格式错误' };
-                        }
-
-                        if (result.status === 'success') {
-                            alert(result.msg);
+                        if (data.status === 'success') {
                             let countdown = 60;
                             this.textContent = `重新发送(${countdown})`;
                             const timer = setInterval(() => {
@@ -405,117 +475,75 @@
                                 }
                             }, 1000);
                         } else {
-                            alert(result.msg || '发送失败');
                             this.disabled = false;
                             this.textContent = '获取验证码';
                         }
                     } catch (error) {
-                        console.error('发送验证码失败：', error);
-                        alert('发送失败，请重试');
+                        showFloatingAlert('发送失败，请重试');
                         this.disabled = false;
                         this.textContent = '获取验证码';
                     }
                 });
             }
 
-            // 2. 直接确认注销按钮逻辑（原有代码，保留）
+
+            // 4. 确认注销逻辑（改用模态框二次确认）
             const directConfirmBtn = document.getElementById('directConfirmBtn');
             if (directConfirmBtn) {
                 directConfirmBtn.addEventListener('click', async function() {
-                    this.blur(); // 移除焦点
-
-                    // 1. 获取输入值
                     const verifyCode = document.getElementById('verifyCode').value.trim();
                     const verifyPassword = document.getElementById('verifyPassword').value.trim();
 
-                    // 2. 前端校验
+                    // 1. 前端校验（悬浮提示）
                     if (!verifyCode || verifyCode.length !== 6) {
-                        alert('请输入6位验证码');
+                        showFloatingAlert('请输入6位验证码');
                         return;
                     }
                     if (!verifyPassword) {
-                        alert('请输入账号密码');
+                        showFloatingAlert('请输入账号密码');
                         return;
                     }
 
-                    // 3. 二次确认
-                    if (!confirm('你真的要注销账号吗？此操作不可逆！')) {
-                        return;
-                    }
+                    // 2. 打开二次确认的模态框
+                    const confirmModal = new bootstrap.Modal(document.getElementById('logoutConfirmModal'));
+                    confirmModal.show();
 
-                    try {
-                        // 4. 调用注销接口
-                        const response = await fetch("{% url 'private:confirm_logout' %}", {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': csrfToken,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                verifyCode: verifyCode,
-                                verifyPassword: verifyPassword
-                            })
-                        });
+                    // 3. 「确定注销」按钮逻辑
+                    document.getElementById('finalLogoutBtn').addEventListener('click', async () => {
+                        // 关闭二次确认模态框
+                        confirmModal.hide();
 
-                        // 5. 处理响应
-                        const contentType = response.headers.get('content-type');
-                        let result;
-                        if (contentType && contentType.includes('application/json')) {
-                            result = await response.json();
-                        } else {
-                            // 收到登录页HTML，直接跳首页
-                            alert('账号已成功注销！');
-                            window.location.href = '/index';
-                            return;
+                        try {
+                            // 调用注销接口
+                            const response = await fetch("{% url 'private:confirm_logout' %}", {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRFToken': csrfToken,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    verifyCode: verifyCode,
+                                    verifyPassword: verifyPassword
+                                })
+                            });
+                            const data = await response.json();
+                            showFloatingAlert(data.msg); // 悬浮提示结果
+
+                            if (data.status === 'success') {
+                                // 关闭原注销弹窗
+                                const logoutModal = bootstrap.Modal.getInstance(document.getElementById('logoutVerifyModal'));
+                                if (logoutModal) logoutModal.hide();
+                                // 跳转到首页
+                                setTimeout(() => window.location.href = data.redirect_url || '/index/', 1500);
+                            }
+                        } catch (error) {
+                            showFloatingAlert('注销失败，请重试');
                         }
-
-                        // 6. 处理结果
-                        if (result.status === 'success') {
-                            alert('账号已成功注销！');
-                            // 关闭模态框
-                            const verifyModal = bootstrap.Modal.getInstance(document.getElementById('logoutVerifyModal'));
-                            if (verifyModal) verifyModal.hide();
-                            // 跳转到首页/index
-                            window.location.href = result.redirect_url || '/index/';
-                        } else {
-                            alert(result.msg || '注销失败');
-                        }
-                    } catch (error) {
-                        console.error('注销失败：', error);
-                        alert('注销失败，请重试');
-                    }
+                    }, { once: true }); // 加once避免多次绑定
                 });
             }
 
-            // 3. 全局模态框焦点处理（原有代码，保留）
-            document.querySelectorAll('.modal').forEach(modal => {
-                modal.addEventListener('show.bs.modal', function() {
-                    const focused = this.querySelector(':focus');
-                    if (focused) focused.blur();
-                });
-
-                modal.addEventListener('hidden.bs.modal', function() {
-                    const focused = this.querySelector(':focus');
-                    if (focused) focused.blur();
-                    const mainContent = document.querySelector('main, .container, body');
-                    if (mainContent) mainContent.focus();
-                });
-
-                const closeBtn = modal.querySelector('.btn-close');
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', function() {
-                        this.blur();
-                    });
-                }
-            });
-
-            // 4. 页面卸载前移除焦点（原有代码，保留）
-            window.addEventListener('beforeunload', function() {
-                const focused = document.activeElement;
-                if (focused) focused.blur();
-            });
-
-            // 5. 修改密码-发送验证码逻辑（修复csrfToken）
+            // 5. 发送修改密码验证码逻辑（提示用悬浮框）
             const sendPwdCodeBtn = document.getElementById('sendPwdCodeBtn');
             if (sendPwdCodeBtn) {
                 sendPwdCodeBtn.addEventListener('click', async function() {
@@ -523,17 +551,17 @@
                     this.textContent = '发送中...';
 
                     try {
-                        const response = await fetch("{% url 'private:send_change_pwd_code' %}", {
+                        const response = await fetch("{% url 'private:send_change_pwd_verify_code' %}", {
                             method: 'POST',
                             headers: {
-                                'X-CSRFToken': csrfToken, // 现在能正确访问
+                                'X-CSRFToken': csrfToken,
                                 'Content-Type': 'application/json'
                             }
                         });
+                        const data = await response.json();
+                        showFloatingAlert(data.msg); // 悬浮提示
 
-                        const result = await response.json();
-                        if (result.status === 'success') {
-                            alert(result.msg);
+                        if (data.status === 'success') {
                             let countdown = 60;
                             this.textContent = `重新发送(${countdown})`;
                             const timer = setInterval(() => {
@@ -546,76 +574,63 @@
                                 }
                             }, 1000);
                         } else {
-                            alert(result.msg || '发送失败');
                             this.disabled = false;
                             this.textContent = '获取验证码';
                         }
                     } catch (error) {
-                        console.error('发送验证码失败：', error);
-                        alert('发送失败，请重试');
+                        showFloatingAlert('发送失败，请重试'); // 悬浮提示
                         this.disabled = false;
                         this.textContent = '获取验证码';
                     }
                 });
             }
 
-            // 6. 修改密码-确认修改逻辑（修复csrfToken）
+            // 6. 确认修改密码逻辑（提示用悬浮框）
             const confirmChangePwdBtn = document.getElementById('confirmChangePwdBtn');
             if (confirmChangePwdBtn) {
                 confirmChangePwdBtn.addEventListener('click', async function() {
-                    // 1. 获取输入值
                     const verifyCode = document.getElementById('pwdVerifyCode').value.trim();
                     const newPassword = document.getElementById('newPassword').value.trim();
                     const confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
 
-                    // 2. 前端校验（仅验证验证码和新密码）
                     if (!verifyCode || verifyCode.length !== 6) {
-                        alert('请输入6位验证码');
+                        showFloatingAlert('请输入6位验证码'); // 悬浮提示
                         return;
                     }
                     if (newPassword.length < 6) {
-                        alert('新密码至少6位');
+                        showFloatingAlert('新密码至少6位'); // 悬浮提示
                         return;
                     }
                     if (newPassword !== confirmNewPassword) {
-                        alert('两次输入的新密码不一致');
+                        showFloatingAlert('两次输入的新密码不一致'); // 悬浮提示
                         return;
                     }
 
                     try {
-                        // 3. 调用修改密码接口
                         const response = await fetch("{% url 'private:change_password' %}", {
                             method: 'POST',
                             headers: {
-                                'X-CSRFToken': csrfToken, // 现在能正确访问
+                                'X-CSRFToken': csrfToken,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                verifyCode: verifyCode,  // 仅传验证码和新密码
+                                verifyCode: verifyCode,
                                 newPassword: newPassword
                             })
                         });
+                        const data = await response.json();
+                        showFloatingAlert(data.msg); // 悬浮提示
 
-                        const result = await response.json();
-                        if (result.status === 'success') {
-                            alert('密码修改成功！请重新登录');
-                            // 关闭模态框
-                            const pwdModal = bootstrap.Modal.getInstance(document.getElementById('changePwdModal'));
-                            if (pwdModal) pwdModal.hide();
-                            // 跳转到登录页
-                            window.location.href = '{% url "BLauth:login" %}'; // 替换为你的登录页URL
-                        } else {
-                            alert(result.msg || '密码修改失败');
+                        if (data.status === 'success') {
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('changePwdModal'));
+                            modal.hide();
+                            setTimeout(() => window.location.href = '/login/', 1500);
                         }
                     } catch (error) {
-                        console.error('修改密码失败：', error);
-                        alert('修改失败，请重试');
+                        showFloatingAlert('修改失败，请重试'); // 悬浮提示
                     }
                 });
             }
         });
     </script>
-
-
-
 {% endblock %}
