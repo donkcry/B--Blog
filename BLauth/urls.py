@@ -8,4 +8,8 @@ urlpatterns = [
     path('logout', views.BLlogout, name='logout'),
     path('register', views.register, name='register'),
     path('captcha', views.send_email_captcha, name='captcha'),
+    path('forgot-password', views.forgot_password, name='forgot_password'),
+    path('send-forgot-captcha', views.send_forgot_captcha, name='send_forgot_captcha'),
+    path('verify-forgot-captcha', views.verify_forgot_captcha, name='verify_forgot_captcha'),
+    path('reset-password', views.reset_password, name='reset_password'),
 ]
