@@ -8,6 +8,7 @@ from django.views.decorators.http import require_http_methods
 from .forms import RegisterForm,LoginForm
 from django.contrib.auth import get_user_model,login,logout
 from django.urls import reverse
+import json
 
 User = get_user_model()
 
@@ -69,3 +70,71 @@ def send_email_captcha(request):
     CaptchaModel.objects.update_or_create(email=email,defaults={'captcha':captcha})
     send_mail('BL博客注册验证码',message=f'您的注册验证码是：{captcha}',recipient_list=[email],from_email=None)
     return JsonResponse({'code':200,'message':'邮箱验证码发送成功！'})
+
+
+@require_http_methods(['GET', 'POST'])
+def forgot_password(request):
+    """忘记密码页面"""
+    if request.method == 'GET':
+        return render(request, 'forgot_password.html')
+    # （后续可扩展：验证通过后重置密码，这里先做验证码验证）
+
+
+def send_forgot_captcha(request):
+    """发送忘记密码的验证码"""
+    email = request.GET.get('email')
+    if not email:
+        return JsonResponse({'code': 400, 'message': '必须传递邮箱！'})
+    # 检查邮箱是否已注册
+    if not User.objects.filter(email=email).exists():
+        return JsonResponse({'code': 400, 'message': '该邮箱未注册！'})
+    # 生成并保存验证码
+    captcha = ''.join(random.sample(string.digits, 4))
+    CaptchaModel.objects.update_or_create(email=email, defaults={'captcha': captcha})
+    # 发送邮件
+    send_mail(
+        'BL博客忘记密码验证码',
+        message=f'您的忘记密码验证码是：{captcha}',
+        recipient_list=[email],
+        from_email=None
+    )
+    return JsonResponse({'code': 200, 'message': '验证码已发送至邮箱！'})
+
+
+def verify_forgot_captcha(request):
+    """验证忘记密码的验证码"""
+    email = request.GET.get('email')
+    captcha = request.GET.get('captcha')
+    if not (email and captcha):
+        return JsonResponse({'code': 400, 'message': '邮箱和验证码不能为空！'})
+    # 验证验证码
+    captcha_model = CaptchaModel.objects.filter(email=email, captcha=captcha).first()
+    if not captcha_model:
+        return JsonResponse({'code': 400, 'message': '验证码错误！'})
+    # 验证通过，删除验证码（避免重复使用）
+    captcha_model.delete()
+    return JsonResponse({'code': 200, 'message': '验证码验证成功！'})
+
+
+@require_http_methods(['POST'])
+def reset_password(request):
+    """重置密码接口"""
+    try:
+        data = json.loads(request.body)
+        email = data.get('email')
+        new_password = data.get('new_password')
+
+        if not (email and new_password):
+            return JsonResponse({'code': 400, 'message': '参数不全！'})
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return JsonResponse({'code': 400, 'message': '用户不存在！'})
+
+        # 修改密码
+        user.set_password(new_password)
+        user.save()
+
+        return JsonResponse({'code': 200, 'message': '密码重置成功！'})
+    except Exception as e:
+        return JsonResponse({'code': 500, 'message': f'服务器错误：{str(e)}'})
