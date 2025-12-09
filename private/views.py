@@ -6,6 +6,14 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from blog.models import Blog, BlogComment
 from django.urls.base import reverse
+from django.core.mail import send_mail
+import random
+import string
+import json
+import traceback
+from django.http import JsonResponse
+from django.contrib.auth import get_user_model
+from .models import VerifyCode
 
 
 @login_required
@@ -117,5 +125,89 @@ def edit_profile(request):
     return render(request, 'private/edit_profile.html', context)
 
 
+# 发送注销验证码
+@login_required
+def send_logout_verify_code(request):
+    if request.method == 'POST':
+        email = request.user.email
+        if not email:
+            return JsonResponse({'status': 'error', 'msg': '账号未绑定邮箱，无法发送验证码'})
+
+        # 生成6位数字验证码
+        code = ''.join(random.choices(string.digits, k=6))
+
+        # 先删除该用户旧的验证码
+        VerifyCode.objects.filter(user=request.user).delete()
+
+        # 保存新验证码
+        VerifyCode.objects.create(
+            user=request.user,
+            code=code,
+            email=email
+        )
+
+        # 发送邮件
+        try:
+            send_mail(
+                subject='账号注销验证码',
+                message=f'你的账号注销验证码为：{code}（5分钟内有效），请勿泄露给他人！',
+                from_email=None,  # 使用DEFAULT_FROM_EMAIL
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            return JsonResponse({'status': 'success', 'msg': '验证码已发送至你的邮箱'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'msg': f'发送失败：{str(e)}'})
+    return JsonResponse({'status': 'error', 'msg': '请求方式错误'})
 
 
+# 验证并注销账号
+# 移除@login_required，手动校验登录状态
+def confirm_logout(request):
+    # 手动校验用户是否登录（替代装饰器）
+    if not request.user.is_authenticated:
+        return JsonResponse({'status': 'error', 'msg': '请先登录后再注销'}, status=200)
+
+    if request.method == 'POST':
+        try:
+            # 1. 解析前端JSON
+            data = json.loads(request.body)
+            verify_code = data.get('verifyCode', '').strip()
+            password = data.get('verifyPassword', '').strip()
+
+            # 2. 密码校验
+            if not request.user.check_password(password):
+                return JsonResponse({'status': 'error', 'msg': '账号密码错误'}, status=200)
+
+            # 3. 验证码校验
+            try:
+                code_obj = VerifyCode.objects.filter(user=request.user).latest('created_at')
+            except VerifyCode.DoesNotExist:
+                return JsonResponse({'status': 'error', 'msg': '请先获取验证码'}, status=200)
+
+            if not code_obj.is_valid():
+                return JsonResponse({'status': 'error', 'msg': '验证码已过期，请重新获取'}, status=200)
+
+            if code_obj.code != verify_code:
+                return JsonResponse({'status': 'error', 'msg': '验证码错误'}, status=200)
+
+            # 4. 删除用户及验证码
+            user_id = request.user.id
+            User = get_user_model()
+            User.objects.filter(id=user_id).delete()
+            VerifyCode.objects.filter(user_id=user_id).delete()
+
+            # 5. 返回成功（跳转首页/index）
+            return JsonResponse({
+                'status': 'success',
+                'msg': '账号已成功注销',
+                'redirect_url': '/index'  # 核心：指向你的首页/index
+            }, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'msg': '请求数据格式错误'}, status=200)
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'status': 'error', 'msg': f'服务器错误：{str(e)}'}, status=200)
+    else:
+        return JsonResponse({'status': 'error', 'msg': '仅支持POST请求'}, status=405)
