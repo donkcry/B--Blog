@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-# Create your models here.
 
 class BlogCategory(models.Model):
     name = models.CharField(max_length=200,verbose_name='分类名称')

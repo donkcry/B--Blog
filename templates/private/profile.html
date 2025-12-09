@@ -127,7 +127,8 @@
         </div>
 
 
-        <!-- 新增：验证模态框（邮箱+验证码+密码） -->
+
+        <!-- 注销验证模态框（仅保留这一个模态框） -->
         <div class="modal fade" id="logoutVerifyModal" tabindex="-1" aria-labelledby="logoutVerifyModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -145,42 +146,26 @@
                             <div class="mb-3">
                                 <label for="verifyCode" class="form-label">邮箱验证码</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="verifyCode" placeholder="输入验证码" required>
+                                    <input type="text" class="form-control" id="verifyCode" placeholder="输入6位验证码" required>
                                     <button type="button" class="btn btn-outline-secondary" id="sendVerifyCodeBtn">获取验证码</button>
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label for="verifyPassword" class="form-label">账号密码</label>
-                                <input type="password" class="form-control" id="verifyPassword" placeholder="输入密码" required>
+                                <input type="password" class="form-control" id="verifyPassword" placeholder="输入登录密码" required>
                             </div>
                         </form>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                        <button type="button" class="btn btn-danger" id="toConfirmBtn">下一步</button>
+                        <!-- 直接确认注销按钮 -->
+                        <button type="button" class="btn btn-danger" id="directConfirmBtn">确认注销</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 新增：确认注销模态框 -->
-        <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="logoutConfirmModalLabel">确认注销账号</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="text-danger">你真的要注销账号吗？（此操作不可逆，想要再次发布博客需要重新注册账号）</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">再想想</button>
-                        <button type="button" class="btn btn-danger" id="confirmLogoutBtn">确定</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- 删除原有的logoutConfirmModal模态框 -->
 
 
         <!-- 选项卡导航 -->
@@ -307,4 +292,164 @@
             {% endif %}
         </div>
     </div>
+
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            // 1. 发送验证码逻辑
+            const sendVerifyCodeBtn = document.getElementById('sendVerifyCodeBtn');
+            if (sendVerifyCodeBtn) {
+                sendVerifyCodeBtn.addEventListener('click', async function() {
+                    this.disabled = true;
+                    this.textContent = '发送中...';
+
+                    try {
+                        const response = await fetch("{% url 'private:send_logout_code' %}", {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrfToken,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        const contentType = response.headers.get('content-type');
+                        let result;
+                        if (contentType && contentType.includes('application/json')) {
+                            result = await response.json();
+                        } else {
+                            result = { status: 'error', msg: '服务器返回格式错误' };
+                        }
+
+                        if (result.status === 'success') {
+                            alert(result.msg);
+                            let countdown = 60;
+                            this.textContent = `重新发送(${countdown})`;
+                            const timer = setInterval(() => {
+                                countdown--;
+                                this.textContent = `重新发送(${countdown})`;
+                                if (countdown <= 0) {
+                                    clearInterval(timer);
+                                    this.disabled = false;
+                                    this.textContent = '获取验证码';
+                                }
+                            }, 1000);
+                        } else {
+                            alert(result.msg || '发送失败');
+                            this.disabled = false;
+                            this.textContent = '获取验证码';
+                        }
+                    } catch (error) {
+                        console.error('发送验证码失败：', error);
+                        alert('发送失败，请重试');
+                        this.disabled = false;
+                        this.textContent = '获取验证码';
+                    }
+                });
+            }
+
+            // 2. 直接确认注销按钮逻辑（核心）
+            const directConfirmBtn = document.getElementById('directConfirmBtn');
+            if (directConfirmBtn) {
+                directConfirmBtn.addEventListener('click', async function() {
+                    this.blur(); // 移除焦点
+
+                    // 1. 获取输入值
+                    const verifyCode = document.getElementById('verifyCode').value.trim();
+                    const verifyPassword = document.getElementById('verifyPassword').value.trim();
+
+                    // 2. 前端校验
+                    if (!verifyCode || verifyCode.length !== 6) {
+                        alert('请输入6位验证码');
+                        return;
+                    }
+                    if (!verifyPassword) {
+                        alert('请输入账号密码');
+                        return;
+                    }
+
+                    // 3. 二次确认
+                    if (!confirm('你真的要注销账号吗？此操作不可逆！')) {
+                        return;
+                    }
+
+                    try {
+                        // 4. 调用注销接口
+                        const response = await fetch("{% url 'private:confirm_logout' %}", {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrfToken,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                verifyCode: verifyCode,
+                                verifyPassword: verifyPassword
+                            })
+                        });
+
+                        // 5. 处理响应
+                        const contentType = response.headers.get('content-type');
+                        let result;
+                        if (contentType && contentType.includes('application/json')) {
+                            result = await response.json();
+                        } else {
+                            // 收到登录页HTML，直接跳首页
+                            alert('账号已成功注销！');
+                            window.location.href = '/index';
+                            return;
+                        }
+
+                        // 6. 处理结果
+                        if (result.status === 'success') {
+                            alert('账号已成功注销！');
+                            // 关闭模态框
+                            const verifyModal = bootstrap.Modal.getInstance(document.getElementById('logoutVerifyModal'));
+                            if (verifyModal) verifyModal.hide();
+                            // 跳转到首页/index
+                            window.location.href = result.redirect_url || '/index/';
+                        } else {
+                            alert(result.msg || '注销失败');
+                        }
+                    } catch (error) {
+                        console.error('注销失败：', error);
+                        alert('注销失败，请重试');
+                    }
+                });
+            }
+
+            // 3. 全局模态框焦点处理（解决aria-hidden警告）
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('show.bs.modal', function() {
+                    const focused = this.querySelector(':focus');
+                    if (focused) focused.blur();
+                });
+
+                modal.addEventListener('hidden.bs.modal', function() {
+                    const focused = this.querySelector(':focus');
+                    if (focused) focused.blur();
+                    const mainContent = document.querySelector('main, .container, body');
+                    if (mainContent) mainContent.focus();
+                });
+
+                const closeBtn = modal.querySelector('.btn-close');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        this.blur();
+                    });
+                }
+            });
+
+            // 4. 页面卸载前移除焦点
+            window.addEventListener('beforeunload', function() {
+                const focused = document.activeElement;
+                if (focused) focused.blur();
+            });
+        });
+
+    </script>
+
+
+
 {% endblock %}
