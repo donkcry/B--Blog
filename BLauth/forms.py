@@ -17,6 +17,8 @@ class RegisterForm(forms.Form):
     def clean_email(self):
         email=self.cleaned_data.get('email')
         exists = User.objects.filter(email=email).exists()
+        if not email.endswith('@qq.com'):
+            raise forms.ValidationError('仅支持QQ邮箱注册！')
         if exists:
             raise forms.ValidationError('此邮箱已注册！')
         return email
