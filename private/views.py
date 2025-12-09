@@ -211,3 +211,83 @@ def confirm_logout(request):
             return JsonResponse({'status': 'error', 'msg': f'服务器错误：{str(e)}'}, status=200)
     else:
         return JsonResponse({'status': 'error', 'msg': '仅支持POST请求'}, status=405)
+
+
+# 新增：发送修改密码验证码接口（复用注销接口逻辑）
+@login_required
+def send_change_pwd_verify_code(request):
+    if request.method == 'POST':
+        email = request.user.email
+        if not email:
+            return JsonResponse({'status': 'error', 'msg': '账号未绑定邮箱，无法发送验证码'})
+
+        # 生成6位数字验证码（和注销接口一致）
+        code = ''.join(random.choices(string.digits, k=6))
+
+        # 先删除该用户旧的验证码（避免重复）
+        VerifyCode.objects.filter(user=request.user).delete()
+
+        # 保存新验证码（复用同一张表）
+        VerifyCode.objects.create(
+            user=request.user,
+            code=code,
+            email=email
+        )
+
+        # 发送修改密码邮件（仅主题/内容不同）
+        try:
+            send_mail(
+                subject='修改密码验证码',  # 区别注销的主题
+                message=f'你的修改密码验证码为：{code}（5分钟内有效），请勿泄露给他人！',  # 区别注销的内容
+                from_email=None,  # 使用DEFAULT_FROM_EMAIL
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            return JsonResponse({'status': 'success', 'msg': '验证码已发送至你的邮箱'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'msg': f'发送失败：{str(e)}'})
+    return JsonResponse({'status': 'error', 'msg': '请求方式错误'})
+
+
+# 新增：修改密码接口（仅验证验证码，无需原密码）
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        # 仅解析JSON格式参数（前端传递的是JSON）
+        try:
+            # 正确解析JSON数据
+            data = json.loads(request.body)  # ✅ 替换 request.json
+            verify_code = data.get('verifyCode', '').strip()
+            new_password = data.get('newPassword', '').strip()
+        except json.JSONDecodeError:  # 精准捕获JSON解析错误
+            return JsonResponse({'status': 'error', 'msg': '参数格式错误（请传递JSON格式）'})
+
+        # 1. 校验参数
+        if not verify_code or len(verify_code) != 6:
+            return JsonResponse({'status': 'error', 'msg': '请输入6位有效验证码'})
+        if not new_password or len(new_password) < 6:
+            return JsonResponse({'status': 'error', 'msg': '新密码至少6位'})
+
+        # 2. 验证验证码
+        # 优先获取最新创建的验证码
+        try:
+            code_obj = VerifyCode.objects.filter(
+                user=request.user,
+                code=verify_code
+            ).latest('created_at')  # ✅ 按创建时间取最新
+            if not code_obj.is_valid():
+                return JsonResponse({'status': 'error', 'msg': '验证码已过期（有效期5分钟）'})
+        except VerifyCode.DoesNotExist:
+            return JsonResponse({'status': 'error', 'msg': '验证码错误，请重新输入'})
+
+        # 3. 修改密码
+        user = request.user
+        user.set_password(new_password)
+        user.save()
+
+        # 4. 删除验证码
+        VerifyCode.objects.filter(user=request.user).delete()
+
+        return JsonResponse({'status': 'success', 'msg': '密码修改成功，请重新登录'})
+
+    return JsonResponse({'status': 'error', 'msg': '请求方式错误'})

@@ -14,4 +14,8 @@ urlpatterns = [
     path('send-logout-code/', views.send_logout_verify_code, name='send_logout_code'),
     # 新增：验证并注销账号接口
     path('confirm-logout/', views.confirm_logout, name='confirm_logout'),
+    # 新增：修改密码验证码
+    path('send_change_pwd_code/', views.send_change_pwd_verify_code, name='send_change_pwd_code'),
+    # 新增：确认修改密码
+    path('change_password/', views.change_password, name='change_password'),
 ]

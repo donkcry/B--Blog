@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from datetime import datetime, timedelta
+from datetime import timedelta
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -17,4 +18,4 @@ class VerifyCode(models.Model):
 
     def is_valid(self):
         """验证验证码是否有效（5分钟内）"""
-        return datetime.now() < self.created_at + timedelta(minutes=5)
+        return timezone.now() < self.created_at + timedelta(minutes=5)
