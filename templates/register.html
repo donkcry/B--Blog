@@ -1,12 +1,8 @@
 {% extends 'base.html'%}
-
 {% load static %}
-
 {% block title %}注册{% endblock %}
-
 {% block head %}
     <style>
-        /* 自定义弹窗样式（和忘记密码页统一） */
         .custom-alert {
             position: fixed;
             top: 20px;
@@ -31,7 +27,6 @@
         }
     </style>
 {% endblock %}
-
 {% block main %}
     <div style="max-width: 330px" class="m-auto">
         <h1 class="text-center mb-4">注册</h1>
@@ -39,11 +34,13 @@
             {% csrf_token %}
             <div class="mb-3">
                 <label class="form-label">用户名</label>
-                <input type="text" class="form-control" name="username" placeholder="请输入用户名" autocomplete="off">
+                <input type="text" class="form-control" name="username" placeholder="请输入用户名" autocomplete="off"
+                       value="{{ form.username.value|default:'' }}">
             </div>
             <div class="mb-3">
                 <label class="form-label">QQ邮箱</label>
-                <input type="email" class="form-control" name="email" placeholder="仅支持QQ邮箱（xxx@qq.com）" autocomplete="off">
+                <input type="email" class="form-control" name="email" placeholder="仅支持QQ邮箱（xxx@qq.com）" autocomplete="off"
+                       value="{{ form.email.value|default:'' }}">
             </div>
             <div class="mb-3">
                 <label class="form-label">验证码</label>
@@ -61,29 +58,20 @@
     </div>
 
     <script>
-        // 1. 自定义弹窗函数（和忘记密码页统一）
         function showCustomAlert(message, type = 'info', duration = 3000) {
-            // 移除旧弹窗
             const oldAlert = document.querySelector('.custom-alert');
             if (oldAlert) oldAlert.remove();
-
-            // 创建新弹窗
             const alertBox = document.createElement('div');
             alertBox.className = `custom-alert ${type}`;
             alertBox.innerText = message;
             document.body.appendChild(alertBox);
-
-            // 显示弹窗
             setTimeout(() => alertBox.classList.add('show'), 10);
-
-            // 自动消失
             setTimeout(() => {
                 alertBox.classList.remove('show');
                 setTimeout(() => alertBox.remove(), 300);
             }, duration);
         }
 
-        // 2. 页面加载完成后执行
         document.addEventListener('DOMContentLoaded', function() {
             const registerForm = document.getElementById('registerForm');
             const emailInput = registerForm.querySelector('input[name="email"]');
@@ -92,9 +80,8 @@
             const passwordInput = registerForm.querySelector('input[name="password"]');
             const captchaInput = registerForm.querySelector('input[name="captcha"]');
 
-            // 3. 发送验证码逻辑
+            // 发送验证码逻辑
             captchaBtn.addEventListener('click', function() {
-                // 前置校验
                 const email = emailInput.value.trim();
                 if (!email) {
                     showCustomAlert('请输入QQ邮箱！', 'error');
@@ -105,17 +92,14 @@
                     return;
                 }
 
-                // 禁用按钮 + 倒计时
                 captchaBtn.disabled = true;
                 captchaBtn.innerText = '发送中...';
 
-                // 调用验证码接口
                 fetch(`{% url 'BLauth:captcha' %}?email=${email}`)
                     .then(res => res.json())
                     .then(data => {
                         if (data.code === 200) {
                             showCustomAlert('验证码已发送至您的QQ邮箱！', 'success');
-                            // 60秒倒计时
                             let count = 60;
                             const timer = setInterval(() => {
                                 captchaBtn.innerText = `重新发送(${count}s)`;
@@ -139,11 +123,9 @@
                     });
             });
 
-            // 4. 表单提交校验
+            // 表单提交校验
             registerForm.addEventListener('submit', function(e) {
-                e.preventDefault(); // 阻止默认提交
-
-                // 前端基础校验
+                e.preventDefault();
                 const username = usernameInput.value.trim();
                 const email = emailInput.value.trim();
                 const password = passwordInput.value.trim();
@@ -169,18 +151,20 @@
                     passwordInput.focus();
                     return;
                 }
-
-                // 提交表单（原生方式）
                 this.submit();
             });
 
-            // 5. 捕获后端返回的错误（注册失败时弹窗提示）
-            {% if form.errors %}
-                {% for field, errors in form.errors.items %}
-                    {% for error in errors %}
-                        showCustomAlert('{{ error }}', 'error');
+            // 修复：统一错误提示逻辑（包括自定义重复注册错误）
+            {% if form.errors or custom_error %}
+                {% if custom_error %}
+                    showCustomAlert('{{ custom_error }}', 'error');
+                {% else %}
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            showCustomAlert('{{ error }}', 'error');
+                        {% endfor %}
                     {% endfor %}
-                {% endfor %}
+                {% endif %}
             {% endif %}
         });
     </script>

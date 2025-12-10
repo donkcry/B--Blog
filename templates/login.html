@@ -1,12 +1,8 @@
 {% extends 'base.html'%}
-
 {% load static %}
-
 {% block title %}登录{% endblock %}
-
 {% block head %}
     <style>
-        /* 自定义非阻塞提示框样式 */
         .custom-alert {
             position: fixed;
             top: 20px;
@@ -28,17 +24,12 @@
             top: 30px;
             pointer-events: auto;
         }
-        .custom-alert.fade-out {
-            opacity: 0;
-            top: 20px;
-        }
     </style>
 {% endblock %}
-
 {% block main %}
     <div style="max-width: 330px" class="m-auto">
         <h1 class="text-center">登录</h1>
-        <form id="loginForm" action="" method="post">
+        <form id="loginForm" action="{% url 'BLauth:login' %}" method="post">  <!-- 新增：明确action地址 -->
             {% csrf_token %}
             <div class="mb-2">
                 <label>邮箱</label>
@@ -63,27 +54,7 @@
         </form>
     </div>
 
-    <!-- 弹窗容器 -->
-    {% if login_error %}
-        <div class="custom-alert error" id="loginErrorAlert">
-            邮箱或密码错误，请重新输入！
-        </div>
-    {% endif %}
-
-    {% if empty_error %}
-        <div class="custom-alert error" id="emptyErrorAlert">
-            邮箱和密码均为必填项！
-        </div>
-    {% endif %}
-
-    {% if register_success %}
-        <div class="custom-alert success" id="registerSuccessAlert">
-            注册成功！请登录
-        </div>
-    {% endif %}
-
     <script>
-        // 全局弹窗函数
         function showCustomAlert(message, type = 'info', duration = 3000) {
             const oldAlert = document.querySelector('.custom-alert');
             if (oldAlert) oldAlert.remove();
@@ -93,54 +64,33 @@
             document.body.appendChild(alertBox);
             setTimeout(() => alertBox.classList.add('show'), 10);
             setTimeout(() => {
-                alertBox.classList.add('fade-out');
+                alertBox.classList.remove('show');
                 setTimeout(() => alertBox.remove(), 300);
             }, duration);
         }
 
-        // 前端表单校验（阻止空提交）
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('loginForm');
             loginForm.addEventListener('submit', function(e) {
                 const email = this.querySelector('input[name="email"]').value.trim();
                 const password = this.querySelector('input[name="password"]').value.trim();
-
-                // 前端拦截空值
                 if (!email || !password) {
-                    e.preventDefault(); // 阻止表单提交
+                    e.preventDefault();
                     showCustomAlert('邮箱和密码均为必填项！', 'error');
                     return;
                 }
             });
 
-            // 显示后端返回的弹窗
-            const loginAlert = document.getElementById('loginErrorAlert');
-            const emptyAlert = document.getElementById('emptyErrorAlert');
-            const registerAlert = document.getElementById('registerSuccessAlert');
-
-            if (loginAlert) {
-                loginAlert.classList.add('show');
-                setTimeout(() => {
-                    loginAlert.classList.add('fade-out');
-                    setTimeout(() => loginAlert.remove(), 300);
-                }, 3000);
-            }
-
-            if (emptyAlert) {
-                emptyAlert.classList.add('show');
-                setTimeout(() => {
-                    emptyAlert.classList.add('fade-out');
-                    setTimeout(() => emptyAlert.remove(), 300);
-                }, 3000);
-            }
-
-            if (registerAlert) {
-                registerAlert.classList.add('show');
-                setTimeout(() => {
-                    registerAlert.classList.add('fade-out');
-                    setTimeout(() => registerAlert.remove(), 300);
-                }, 3000);
-            }
+            // 统一用JS触发弹窗，移除HTML硬编码的弹窗容器
+            {% if login_error %}
+                showCustomAlert('邮箱或密码错误，请重新输入！', 'error');
+            {% endif %}
+            {% if empty_error %}
+                showCustomAlert('邮箱和密码均为必填项！', 'error');
+            {% endif %}
+            {% if register_success %}
+                showCustomAlert('注册成功！请登录', 'success');
+            {% endif %}
         });
     </script>
 {% endblock %}

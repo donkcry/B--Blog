@@ -366,8 +366,10 @@ def send_email_change_code(request):
                 return JsonResponse({'status': 'error', 'msg': '该邮箱已被其他账号绑定，请更换邮箱'})
 
             # 3. 校验新邮箱格式
-            if not forms.EmailField().clean(new_email):
-                return JsonResponse({'status': 'error', 'msg': '邮箱格式错误'})
+            try:
+                forms.EmailField().clean(new_email)
+            except forms.ValidationError:
+                return JsonResponse({'status': 'error', 'msg': '发送失败，请输入一个有效的邮箱地址'})
 
             # 生成6位验证码
             code = ''.join(random.choices(string.digits, k=6))
