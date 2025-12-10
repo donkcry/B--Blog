@@ -72,7 +72,13 @@
                 </div>
                 <div class="card-footer text-body-secondary d-flex justify-content-between">
                     <div>
-                        <img src="{% if blogs.author.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}" alt="用户头像" class="rounded-circle" width="30px" height="30px">
+                        <img
+                                src="{% if blog.author.profile and blog.author.profile.avatar %}{{ blog.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
+                                alt="{{ blog.author.username }}的头像"
+                                class="rounded-circle"
+                                width="30px"
+                                height="30px"
+                        >
                         {{ blog.author.username }}
                     </div>
                     <div>
