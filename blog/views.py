@@ -98,45 +98,36 @@ from django.contrib.auth.decorators import login_required  # 必须加登录验�
 from .models import Blog, BlogComment
 
 
-# 必须加 @login_required，确保只有登录用户能评论
 @login_required
 def pub_comment(request):
-    # 仅处理 POST 请求（GET 请求直接跳回首页）
     if request.method != 'POST':
         messages.error(request, '无效的请求方式！')
-        return redirect(reverse('blog:index'))  # 跳回博客首页（根据你的别名调整）
+        return redirect(reverse('blog:index'))
 
-    # 1. 获取前端传递的参数
     blog_id = request.POST.get('blog_id')
     content = request.POST.get('content', '').strip()
 
-    # 2. 空内容校验
     if not content:
         messages.error(request, '评论内容不能为空！')
         comment_page = request.GET.get('comment_page', 1)
         return redirect(f"{reverse('blog:blog_detail', args=[blog_id])}?comment_page={comment_page}")
 
-    # 3. 校验博客是否存在
     blog = get_object_or_404(Blog, pk=blog_id)
 
-    # 4. 核心：保存评论到数据库（这是你缺失的关键代码）
     try:
         BlogComment.objects.create(
-            content=content,  # 评论内容
-            blog=blog,  # 关联的博客
-            author=request.user  # 评论作者（当前登录用户）
+            content=content,
+            blog=blog,
+            author=request.user
         )
         messages.success(request, '评论发布成功！')
     except Exception as e:
         messages.error(request, f'评论发布失败：{str(e)}')
-        # 发布失败跳回原页码
         comment_page = request.GET.get('comment_page', 1)
         return redirect(f"{reverse('blog:blog_detail', args=[blog_id])}?comment_page={comment_page}")
 
-    # 5. 发布成功跳回最后一页（最新评论在最后一页）
-    comment_count = blog.comments.count()
-    last_page = (comment_count - 1) // 6 + 1  # 每页6条，计算最后一页
-    return redirect(f"{reverse('blog:blog_detail', args=[blog_id])}?comment_page={last_page}")
+    # 修复：最新评论在第1页，所以跳转到第1页
+    return redirect(f"{reverse('blog:blog_detail', args=[blog_id])}?comment_page=1#comment-area")
 
 
 
