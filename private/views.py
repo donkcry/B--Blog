@@ -13,7 +13,7 @@ import json
 import traceback
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import get_user_model
-from .models import VerifyCode
+from .models import VerifyCode,UserProfile
 
 
 @login_required
@@ -392,3 +392,21 @@ def send_email_change_code(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'msg': f'发送失败：{str(e)}'})
     return JsonResponse({'status': 'error', 'msg': '请求方式错误'})
+
+
+
+@login_required
+def update_avatar(request):
+    if request.method == 'POST' and request.FILES.get('avatar'):
+        # 获取用户的UserProfile（没有则创建）
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+        # 保存新头像（会自动存储到media/avatars下）
+        profile.avatar = request.FILES['avatar']
+        profile.save()
+        # 返回成功信息和新头像的URL
+        return JsonResponse({
+            'status': 'success',
+            'msg': '头像保存成功',
+            'avatar_url': profile.avatar.url
+        })
+    return JsonResponse({'status': 'error', 'msg': '请求方式错误或未保存文件'})

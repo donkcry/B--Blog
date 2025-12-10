@@ -20,4 +20,5 @@ urlpatterns = [
     path('change_password/', views.change_password, name='change_password'),
     # 发送邮箱修改验证码
     path('send-email-change-code/', views.send_email_change_code, name='send_email_change_code'),
+    path('update_avatar/', views.update_avatar, name='update_avatar'),
 ]
