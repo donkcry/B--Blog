@@ -9,6 +9,7 @@ from .forms import RegisterForm,LoginForm
 from django.contrib.auth import get_user_model,login,logout
 from django.urls import reverse
 import json
+import smtplib
 
 User = get_user_model()
 
@@ -78,13 +79,11 @@ def register(request):
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
 
-            if User.objects.filter(email=email).exists():
-                return render(request, 'register.html', {
-                    'form': form,
-                    'custom_error': '该邮箱已注册，请直接登录！'
-                })
+
 
             user = User.objects.create_user(username=username, email=email, password=password)
+
+
 
             request.session['register_success'] = True
             request.session.set_expiry(5)
@@ -93,35 +92,45 @@ def register(request):
             return render(request, 'register.html', {'form': form})
 
 
-# 验证码接口：修复时间更新逻辑
+# views.py - captcha函数
 @require_http_methods(['GET'])
 def captcha(request):
     email = request.GET.get('email')
     if not email or not email.endswith('@qq.com'):
         return JsonResponse({'code': 400, 'message': '仅支持QQ邮箱！'})
 
+    # 校验邮箱是否已注册
+    if User.objects.filter(email=email).exists():
+        return JsonResponse({'code': 400, 'message': '该邮箱已注册，请直接登录！'})
+
     # 生成4位数字验证码
     captcha_code = ''.join(random.choices(string.digits, k=4))
 
-    # 修复：移除手动更新create_time，模型auto_now=True会自动刷新
+    # 更新/创建验证码记录
     CaptchaModel.objects.update_or_create(
         email=email,
-        defaults={'captcha': captcha_code}  # 仅更新验证码，时间自动更新
+        defaults={'captcha': captcha_code}
     )
 
-    # 发送邮件（需配置settings.py中的邮箱参数）
+    # 发送邮件（精准捕获异常）
     try:
         send_mail(
             subject='注册验证码',
             message=f'您的注册验证码是：{captcha_code}（有效期6分钟）',
-            from_email='2839788640@qq.com',  # 替换为实际发件邮箱
+            from_email='2839788640@qq.com',  # 你的发件邮箱
             recipient_list=[email],
             fail_silently=False,
         )
         return JsonResponse({'code': 200, 'message': '验证码已发送至您的QQ邮箱！（有效期6分钟）'})
+    except smtplib.SMTPDataError as e:
+        # 捕获“无效收件人”异常
+        if 'non-existent account' in str(e) or '550' in str(e):
+            return JsonResponse({'code': 400, 'message': '该QQ邮箱不存在，请检查邮箱地址！'})
+        else:
+            return JsonResponse({'code': 500, 'message': '验证码发送失败，请稍后再试！'})
     except Exception as e:
-        print(f'邮件发送失败：{e}')  # 调试用
-        return JsonResponse({'code': 500, 'message': '邮件发送失败，请检查邮箱配置！'})
+        print(f'邮件发送其他错误：{e}')
+        return JsonResponse({'code': 500, 'message': '验证码发送失败，请稍后再试！'})
 
 
 

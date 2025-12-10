@@ -80,7 +80,7 @@
             const passwordInput = registerForm.querySelector('input[name="password"]');
             const captchaInput = registerForm.querySelector('input[name="captcha"]');
 
-            // 发送验证码逻辑
+            // register.html - 验证码发送逻辑
             captchaBtn.addEventListener('click', function() {
                 const email = emailInput.value.trim();
                 if (!email) {
@@ -96,7 +96,7 @@
                 captchaBtn.innerText = '发送中...';
 
                 fetch(`{% url 'BLauth:captcha' %}?email=${email}`)
-                    .then(res => res.json())
+                    .then(res => res.json())  // 只有请求成功（200）才会进入这里
                     .then(data => {
                         if (data.code === 200) {
                             showCustomAlert('验证码已发送至您的QQ邮箱！', 'success');
@@ -111,13 +111,15 @@
                                 }
                             }, 1000);
                         } else {
+                            // 后端返回的业务错误（400/500）
                             showCustomAlert(data.message, 'error');
                             captchaBtn.disabled = false;
                             captchaBtn.innerText = '获取验证码';
                         }
                     })
                     .catch(err => {
-                        showCustomAlert('网络错误，请重试！', 'error');
+                        // 真正的网络错误（断网、请求超时、服务器挂了）
+                        showCustomAlert('网络错误，请检查网络后重试！', 'error');
                         captchaBtn.disabled = false;
                         captchaBtn.innerText = '获取验证码';
                     });

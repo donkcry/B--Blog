@@ -1,30 +1,19 @@
-# 虚拟环境（根据你用的环境工具选择，比如venv/pipenv/poetry）
+# 虚拟环境
 venv/
 .env
 Pipfile
 Pipfile.lock
 poetry.lock
+
+# 缓存、编译文件
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Django相关
+# Django相关（数据库文件忽略）
 db.sqlite3
 db.sqlite3-journal
-media/
-staticfiles/
-.env.local
-.env.prod
-.env.dev
-*.log
-local_settings.py
 
-# PyCharm/IDE配置
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# 系统文件
-.DS_Store
-Thumbs.db
+# 忽略media下的用户上传文件（但保留avatars目录结构）
+/media/avatars/*
+!media/

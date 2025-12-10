@@ -6,7 +6,7 @@
 
 {% block head %}
     <link
-            href="https://unpkg.com/@wangeditor/editor@latest/dist/css/style.css"
+            href="{% static 'css/wangeditorstyle.css' %}"
             rel="stylesheet"
     />
     <style>
@@ -104,7 +104,7 @@
             box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
         }
     </style>
-    <script src="https://unpkg.com/@wangeditor/editor@latest/dist/index.js"></script>
+    <script src="{% static 'js/wangeditorindex.js' %}"></script>
     <script src="{% static 'js/wangeditor.js' %}"></script>
 {% endblock %}
 
