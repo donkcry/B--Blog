@@ -163,7 +163,7 @@
         <!-- 个人信息头部 -->
         <div class="col-12 profile-header">
             <div class="d-flex align-items-center">
-                <img src="{% static 'img/default.png' %}" alt="用户头像" width="80" height="80" class="rounded-circle me-4">
+                <img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}" alt="用户头像" width="80" height="80" class="rounded-circle me-4" id="userAvatar" style="cursor: pointer;">
                 <div>
                     <h2 class="h4 mb-1">{{ user.username }}</h2>
                     <p class="meta-text mb-0">
@@ -186,6 +186,45 @@
                 </div>
             </div>
         </div>
+
+
+        <!-- 更换头像模态框 -->
+        <div class="modal fade" id="avatarModal" tabindex="-1" aria-labelledby="avatarModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="avatarModalLabel">更换头像</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- 头像预览区域 -->
+                        <div class="text-center mb-3">
+                            <img
+                                    id="avatarPreview"
+                                    src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
+                                    alt="头像预览"
+                                    width="120"
+                                    height="120"
+                                    class="rounded-circle"
+                            >
+                        </div>
+                        <!-- 头像上传表单 -->
+                        <form id="avatarForm" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="avatarFile" class="form-label">选择头像（支持PNG/JPG）</label>
+                                <input type="file" class="form-control" id="avatarFile" name="avatar" accept="image/png, image/jpeg" required>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-outline-success" id="saveAvatarBtn">保存头像</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
         <!-- 注销账号模态框（保留当前样式） -->
         <div class="modal fade" id="logoutVerifyModal" tabindex="-1" aria-labelledby="logoutVerifyModalLabel" aria-hidden="true">
@@ -417,10 +456,11 @@
             // 全局CSRF Token
             let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
 
-            // 1. 悬浮提示框函数（仅用于信息提示）
+            // ========== 1. 悬浮提示框函数（必须放在所有调用前） ==========
             function showFloatingAlert(message) {
                 const alertBox = document.getElementById('floatingAlert');
                 const alertText = document.getElementById('alertText');
+                if (!alertBox || !alertText) return; // 避免元素不存在报错
                 alertText.textContent = message;
                 alertBox.classList.add('show');
                 setTimeout(() => {
@@ -428,7 +468,7 @@
                 }, 3000);
             }
 
-            // 2. 获取Cookie辅助函数
+            // ========== 2. 获取Cookie辅助函数 ==========
             function getCookie(name) {
                 let cookieValue = null;
                 if (document.cookie && document.cookie !== '') {
@@ -444,7 +484,61 @@
                 return cookieValue;
             }
 
-            // 3. 发送注销验证码逻辑（提示用悬浮框）
+            // ========== 3. 头像相关逻辑 ==========
+            const userAvatar = document.getElementById('userAvatar');
+            const avatarModal = new bootstrap.Modal(document.getElementById('avatarModal'));
+            const avatarPreview = document.getElementById('avatarPreview');
+            const avatarFile = document.getElementById('avatarFile');
+            const saveAvatarBtn = document.getElementById('saveAvatarBtn');
+
+            if (userAvatar) {
+                userAvatar.addEventListener('click', function() {
+                    avatarPreview.src = this.src;
+                    avatarModal.show();
+                });
+            }
+
+            if (avatarFile) {
+                avatarFile.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file && file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            avatarPreview.src = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            if (saveAvatarBtn) {
+                saveAvatarBtn.addEventListener('click', async function() {
+                    const formData = new FormData(document.getElementById('avatarForm'));
+
+                    try {
+                        const response = await fetch("{% url 'private:update_avatar' %}", {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        showFloatingAlert(data.msg); // 调用悬浮提示
+
+                        if (data.status === 'success') {
+                            userAvatar.src = data.avatar_url;
+                            avatarPreview.src = data.avatar_url;
+                            avatarModal.hide();
+                        }
+                    } catch (error) {
+                        showFloatingAlert('头像保存失败，请重试'); // 调用悬浮提示
+                        console.error('头像保存错误：', error); // 调试用
+                    }
+                });
+            }
+
+            // ========== 4. 注销验证码逻辑 ==========
             const sendVerifyCodeBtn = document.getElementById('sendVerifyCodeBtn');
             if (sendVerifyCodeBtn) {
                 sendVerifyCodeBtn.addEventListener('click', async function() {
@@ -460,7 +554,7 @@
                             }
                         });
                         const data = await response.json();
-                        showFloatingAlert(data.msg); // 悬浮提示
+                        showFloatingAlert(data.msg); // 调用悬浮提示
 
                         if (data.status === 'success') {
                             let countdown = 60;
@@ -479,42 +573,37 @@
                             this.textContent = '获取验证码';
                         }
                     } catch (error) {
-                        showFloatingAlert('发送失败，请重试');
+                        showFloatingAlert('发送失败，请重试'); // 调用悬浮提示
                         this.disabled = false;
                         this.textContent = '获取验证码';
+                        console.error('发送注销验证码错误：', error);
                     }
                 });
             }
 
-
-            // 4. 确认注销逻辑（改用模态框二次确认）
+            // ========== 5. 确认注销逻辑 ==========
             const directConfirmBtn = document.getElementById('directConfirmBtn');
             if (directConfirmBtn) {
                 directConfirmBtn.addEventListener('click', async function() {
                     const verifyCode = document.getElementById('verifyCode').value.trim();
                     const verifyPassword = document.getElementById('verifyPassword').value.trim();
 
-                    // 1. 前端校验（悬浮提示）
                     if (!verifyCode || verifyCode.length !== 6) {
-                        showFloatingAlert('请输入6位验证码');
+                        showFloatingAlert('请输入6位验证码'); // 调用悬浮提示
                         return;
                     }
                     if (!verifyPassword) {
-                        showFloatingAlert('请输入账号密码');
+                        showFloatingAlert('请输入账号密码'); // 调用悬浮提示
                         return;
                     }
 
-                    // 2. 打开二次确认的模态框
                     const confirmModal = new bootstrap.Modal(document.getElementById('logoutConfirmModal'));
                     confirmModal.show();
 
-                    // 3. 「确定注销」按钮逻辑
                     document.getElementById('finalLogoutBtn').addEventListener('click', async () => {
-                        // 关闭二次确认模态框
                         confirmModal.hide();
 
                         try {
-                            // 调用注销接口
                             const response = await fetch("{% url 'private:confirm_logout' %}", {
                                 method: 'POST',
                                 headers: {
@@ -527,23 +616,22 @@
                                 })
                             });
                             const data = await response.json();
-                            showFloatingAlert(data.msg); // 悬浮提示结果
+                            showFloatingAlert(data.msg); // 调用悬浮提示
 
                             if (data.status === 'success') {
-                                // 关闭原注销弹窗
                                 const logoutModal = bootstrap.Modal.getInstance(document.getElementById('logoutVerifyModal'));
                                 if (logoutModal) logoutModal.hide();
-                                // 跳转到首页
                                 setTimeout(() => window.location.href = data.redirect_url || '/index/', 1500);
                             }
                         } catch (error) {
-                            showFloatingAlert('注销失败，请重试');
+                            showFloatingAlert('注销失败，请重试'); // 调用悬浮提示
+                            console.error('注销错误：', error);
                         }
-                    }, { once: true }); // 加once避免多次绑定
+                    }, { once: true });
                 });
             }
 
-            // 5. 发送修改密码验证码逻辑（提示用悬浮框）
+            // ========== 6. 修改密码验证码逻辑 ==========
             const sendPwdCodeBtn = document.getElementById('sendPwdCodeBtn');
             if (sendPwdCodeBtn) {
                 sendPwdCodeBtn.addEventListener('click', async function() {
@@ -559,7 +647,7 @@
                             }
                         });
                         const data = await response.json();
-                        showFloatingAlert(data.msg); // 悬浮提示
+                        showFloatingAlert(data.msg); // 调用悬浮提示
 
                         if (data.status === 'success') {
                             let countdown = 60;
@@ -578,14 +666,15 @@
                             this.textContent = '获取验证码';
                         }
                     } catch (error) {
-                        showFloatingAlert('发送失败，请重试'); // 悬浮提示
+                        showFloatingAlert('发送失败，请重试'); // 调用悬浮提示
                         this.disabled = false;
                         this.textContent = '获取验证码';
+                        console.error('发送改密验证码错误：', error);
                     }
                 });
             }
 
-            // 6. 确认修改密码逻辑（提示用悬浮框）
+            // ========== 7. 确认修改密码逻辑 ==========
             const confirmChangePwdBtn = document.getElementById('confirmChangePwdBtn');
             if (confirmChangePwdBtn) {
                 confirmChangePwdBtn.addEventListener('click', async function() {
@@ -594,15 +683,15 @@
                     const confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
 
                     if (!verifyCode || verifyCode.length !== 6) {
-                        showFloatingAlert('请输入6位验证码'); // 悬浮提示
+                        showFloatingAlert('请输入6位验证码'); // 调用悬浮提示
                         return;
                     }
                     if (newPassword.length < 6) {
-                        showFloatingAlert('新密码至少6位'); // 悬浮提示
+                        showFloatingAlert('新密码至少6位'); // 调用悬浮提示
                         return;
                     }
                     if (newPassword !== confirmNewPassword) {
-                        showFloatingAlert('两次输入的新密码不一致'); // 悬浮提示
+                        showFloatingAlert('两次输入的新密码不一致'); // 调用悬浮提示
                         return;
                     }
 
@@ -619,7 +708,7 @@
                             })
                         });
                         const data = await response.json();
-                        showFloatingAlert(data.msg); // 悬浮提示
+                        showFloatingAlert(data.msg); // 调用悬浮提示
 
                         if (data.status === 'success') {
                             const modal = bootstrap.Modal.getInstance(document.getElementById('changePwdModal'));
@@ -627,7 +716,8 @@
                             setTimeout(() => window.location.href = '/login/', 1500);
                         }
                     } catch (error) {
-                        showFloatingAlert('修改失败，请重试'); // 悬浮提示
+                        showFloatingAlert('修改失败，请重试'); // 调用悬浮提示
+                        console.error('改密错误：', error);
                     }
                 });
             }

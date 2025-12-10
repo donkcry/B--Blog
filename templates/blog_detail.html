@@ -13,7 +13,7 @@
     <h1>{{ blog.title }}</h1>
     <hr>
     <div>
-        <img src="{% static 'img/default.png' %}" alt="用户头像" class="rounded-circle mb-1" width="30px" height="30px">
+        <img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}" alt="用户头像" class="rounded-circle mb-1" width="30px" height="30px">
         <span>{{ blog.author.username }}</span>
         <span class="ms-1">于</span>
         <span class="ms-1">{{ blog.edit_time|date:"Y年m月d日 H:i" }}发布</span>
@@ -43,7 +43,7 @@
                 <li class="list-group-item">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <img src="{% static 'img/default.png' %}" alt="用户头像" class="rounded-circle" width="30px" height="30px">
+                            <img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}" alt="用户头像" class="rounded-circle" width="30px" height="30px">
                             <span>{{ comment.author.username }}</span>
                         </div>
                         <div>

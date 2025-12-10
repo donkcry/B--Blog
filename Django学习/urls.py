@@ -19,7 +19,8 @@ from django.urls import path, include
 
 import blog.urls
 import BLauth.urls
-import private.urls
+from django.conf import settings
+from django.conf.urls.static import static
     
 
 
@@ -30,3 +31,6 @@ urlpatterns = [
     path('icon',include('icon.urls')),
     path('private/',include('private.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

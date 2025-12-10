@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -146,3 +146,8 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = '2839788640@qq.com'
 EMAIL_HOST_PASSWORD = 'tpsrjhxukusgddhg'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+# Media文件配置（用户上传的文件）
+MEDIA_URL = '/media/'  # 浏览器访问Media文件的URL前缀
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Media文件在本地的存储路径
