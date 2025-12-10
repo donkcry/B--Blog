@@ -1,4 +1,4 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect,get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.urls import reverse_lazy,reverse
 from django.contrib.auth.decorators import login_required
@@ -7,6 +7,7 @@ from .models import *
 from .forms import EditBlogForm
 from django.http.response import JsonResponse
 from django.db.models import Q
+from django.contrib import messages
 
 # Create your views here.
 
@@ -70,17 +71,20 @@ def blog_edit(request):
             return JsonResponse({'code':400,'message':'参数错误！'})
 
 
-
-
-
-
 @require_POST
 @login_required(login_url=reverse_lazy('BLauth:login'))
 def pub_comment(request):
-    blog_id=request.POST.get('blog_id')
-    content=request.POST.get('content')
-    BlogComment.objects.create(blog_id=blog_id,content=content,author=request.user)
-    return redirect(reverse('blog:blog_detail',kwargs={'blog_id':blog_id}))
+    blog_id = request.POST.get('blog_id')
+    content = request.POST.get('content', '').strip()  # 去除前后空格
+
+    # 后端二次校验：防止前端绕过验证
+    if not content:
+        messages.error(request, '评论内容不能为空！')  # 存入错误信息
+        return redirect(reverse('blog:blog_detail', kwargs={'blog_id': blog_id}))
+
+    # 内容非空时创建评论
+    BlogComment.objects.create(blog_id=blog_id, content=content, author=request.user)
+    return redirect(reverse('blog:blog_detail', kwargs={'blog_id': blog_id}))
 
 
 
