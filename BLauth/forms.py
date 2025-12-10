@@ -42,6 +42,15 @@ class RegisterForm(forms.Form):
         }
     )
 
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        # 校验用户名是否已存在
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError('该用户名已被注册，请更换！')
+        return username
+
+
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if not email.endswith('@qq.com'):
