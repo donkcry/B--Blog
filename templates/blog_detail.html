@@ -24,6 +24,22 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
 
+
+        /* 绿色成功提示框 */
+        .success-tip {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #00b0e8; /* bootstrap成功色（绿色） */
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            z-index: 9999;
+            display: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
         /* 分页按钮整体样式 */
         .pagination {
             display: flex;
@@ -92,7 +108,7 @@
         <h4 id="comment-area">评论({{ blog.comments.all|length }})</h4>
         <!-- 新增：悬浮提示框 -->
         <div class="empty-tip" id="commentEmptyTip">评论内容不能为空！</div>
-
+        <div class="success-tip" id="commentSuccessTip">评论发布成功！</div>
         <!-- 评论表单：增加id便于JS监听 -->
         <form method="post" action="{% url 'blog:pub_comment' %}" id="commentForm">
             {% csrf_token %}
@@ -171,6 +187,8 @@
             const form = document.getElementById('commentForm');
             const contentInput = document.getElementById('commentContent');
             const tipBox = document.getElementById('commentEmptyTip');
+            // 提前获取成功提示框元素（避免循环内重复获取）
+            const successTip = document.getElementById('commentSuccessTip');
 
             // 监听表单提交
             form.addEventListener('submit', function(e) {
@@ -189,12 +207,32 @@
                     contentInput.classList.add('is-invalid');
                     // 输入框聚焦
                     contentInput.focus();
-                    // 输入框输入时移除红色边框
-                    contentInput.addEventListener('input', function() {
+                    // 移除重复绑定：用 once 或先移除再绑定
+                    contentInput.oninput = function() {
                         contentInput.classList.remove('is-invalid');
-                    });
+                    };
                 }
             });
+
+            // 处理 Django messages 提示
+            {% if messages %}
+                {% for msg in messages %}
+                    // 增加非空判断（避免元素不存在时报错）
+                    if ("{{ msg.tags }}" === "success" && successTip) {
+                        successTip.style.display = 'block';
+                        setTimeout(() => {
+                            successTip.style.display = 'none';
+                        }, 3000);
+                    }
+                    // 额外：处理错误提示（比如发布失败的情况）
+                    if ("{{ msg.tags }}" === "error" && tipBox) {
+                        tipBox.style.display = 'block';
+                        setTimeout(() => {
+                            tipBox.style.display = 'none';
+                        }, 3000);
+                    }
+                {% endfor %}
+            {% endif %}
         });
     </script>
 {% endblock %}
