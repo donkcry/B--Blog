@@ -72,6 +72,7 @@ def blog_detail(request, blog_id):
 
 
 
+
 @require_http_methods(['GET','POST'])
 @login_required(login_url=reverse_lazy('BLauth:login'))
 def blog_edit(request):
@@ -79,16 +80,47 @@ def blog_edit(request):
         categories = BlogCategory.objects.all()
         return render(request,'blog_edit.html',context={'categories':categories})
     else:
-        form=EditBlogForm(request.POST)
+        form = EditBlogForm(request.POST)
         if form.is_valid():
-            title=form.cleaned_data.get('title')
-            content=form.cleaned_data.get('content')
-            category_id=form.cleaned_data.get('category')
-            blog=Blog.objects.create(title=title,content=content,category_id=category_id,author=request.user)
-            return JsonResponse({'code':200,'message':'博客发布成功！',"data":{"blog_id":blog.id}})
+            title = form.cleaned_data.get('title')
+            content = form.cleaned_data.get('content')
+            category_id = form.cleaned_data.get('category_name')
+            try:
+                blog = Blog.objects.create(
+                    title=title,
+                    content=content,
+                    category_id=category_id,
+                    author=request.user
+                )
+                # 新增：添加成功提示（存储到session）
+                messages.success(request, '博客发布成功！')
+                # 直接返回跳转URL，让前端跳转
+                return JsonResponse({
+                    'code':200,
+                    'message':'博客发布成功！',
+                    "data":{"blog_id":blog.id, "redirect_url": f"/blog/{blog.id}"}
+                })
+            except Exception as e:
+                print(f"创建博客失败：{str(e)}")
+                # 新增：失败提示
+                messages.error(request, f'博客发布失败：{str(e)}')
+                return JsonResponse({
+                    'code':500,
+                    'message':'博客发布失败！',
+                    'error':str(e)
+                })
         else:
-            print(form.errors)
-            return JsonResponse({'code':400,'message':'参数错误！'})
+            # 表单错误：拼接错误信息
+            error_msg = {}
+            for field, errors in form.errors.items():
+                error_msg[field] = errors[0]
+            print("表单错误：", error_msg)
+            # 失败不跳转，前端提示
+            return JsonResponse({
+                'code':400,
+                'message':'参数错误！',
+                'errors':error_msg
+            })
 
 
 from django.shortcuts import render, redirect, get_object_or_404

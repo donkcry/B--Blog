@@ -31,7 +31,7 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: #00b0e8; /* bootstrap成功色（绿色） */
+            background-color: #6610f2; /* bootstrap成功色（绿色） */
             color: white;
             padding: 10px 20px;
             border-radius: 4px;
@@ -182,54 +182,49 @@
     <script>
         hljs.highlightAll();
 
-        // 新增：评论表单验证逻辑
+        // 新增：通用提示显示函数
+        function showTip(tipId, msg = '') {
+            const tipBox = document.getElementById(tipId);
+            if (tipBox) {
+                // 如果传入自定义消息，替换提示文本
+                if (msg) tipBox.textContent = msg;
+                tipBox.style.display = 'block';
+                setTimeout(() => {
+                    tipBox.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // 评论表单验证逻辑
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('commentForm');
             const contentInput = document.getElementById('commentContent');
             const tipBox = document.getElementById('commentEmptyTip');
-            // 提前获取成功提示框元素（避免循环内重复获取）
             const successTip = document.getElementById('commentSuccessTip');
 
             // 监听表单提交
             form.addEventListener('submit', function(e) {
-                // 去除内容前后空格，判断是否为空
                 const content = contentInput.value.trim();
                 if (!content) {
-                    e.preventDefault(); // 阻止表单提交
-                    tipBox.style.display = 'block'; // 显示提示
-
-                    // 3秒后自动隐藏提示
-                    setTimeout(() => {
-                        tipBox.style.display = 'none';
-                    }, 3000);
-
-                    // 可选：给输入框加红色边框提示
+                    e.preventDefault();
+                    showTip('commentEmptyTip'); // 复用提示函数
                     contentInput.classList.add('is-invalid');
-                    // 输入框聚焦
                     contentInput.focus();
-                    // 移除重复绑定：用 once 或先移除再绑定
                     contentInput.oninput = function() {
                         contentInput.classList.remove('is-invalid');
                     };
                 }
             });
 
-            // 处理 Django messages 提示
+            // 处理 Django messages 提示（核心：显示发布成功提示）
             {% if messages %}
                 {% for msg in messages %}
-                    // 增加非空判断（避免元素不存在时报错）
-                    if ("{{ msg.tags }}" === "success" && successTip) {
-                        successTip.style.display = 'block';
-                        setTimeout(() => {
-                            successTip.style.display = 'none';
-                        }, 3000);
+                    if ("{{ msg.tags }}" === "success") {
+                        // 显示发布成功提示（复用success-tip）
+                        showTip('commentSuccessTip', "{{ msg }}");
                     }
-                    // 额外：处理错误提示（比如发布失败的情况）
-                    if ("{{ msg.tags }}" === "error" && tipBox) {
-                        tipBox.style.display = 'block';
-                        setTimeout(() => {
-                            tipBox.style.display = 'none';
-                        }, 3000);
+                    if ("{{ msg.tags }}" === "error") {
+                        showTip('commentEmptyTip', "{{ msg }}");
                     }
                 {% endfor %}
             {% endif %}
