@@ -9,7 +9,7 @@ from django.urls.base import reverse
 from django.core.mail import send_mail
 import random
 import string
-import json
+import json,re
 import traceback
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import get_user_model
@@ -109,6 +109,16 @@ class UserProfileForm(forms.ModelForm):
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+    def clean_new_email(self):
+        new_email = self.cleaned_data.get('new_email')
+        if new_email:  # 只有填写了新邮箱才校验
+            # 正则匹配：QQ邮箱格式为「数字@qq.com」
+            qq_email_pattern = r'^\d+@qq\.com$'
+            if not re.match(qq_email_pattern, new_email):
+                raise forms.ValidationError("新邮箱必须是QQ邮箱（格式：数字@qq.com）")
+        return new_email
+
 
     def clean(self):
         cleaned_data = super().clean()
@@ -356,6 +366,12 @@ def send_email_change_code(request):
             data = json.loads(request.body)
             new_email = data.get('new_email', '').strip()
             current_email = request.user.email
+
+            # 新增：先校验QQ邮箱格式
+            qq_email_pattern = r'^\d+@qq\.com$'
+            if not re.match(qq_email_pattern, new_email):
+                return JsonResponse({'status': 'error', 'msg': '新邮箱必须是QQ邮箱（格式：数字@qq.com）'})
+
 
             # 1. 校验新邮箱是否和原邮箱重复
             if new_email == current_email:

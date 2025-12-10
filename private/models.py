@@ -25,11 +25,14 @@ class VerifyCode(models.Model):
         return timezone.now() < self.created_at + timedelta(minutes=5)
 
 
+
 def avatar_upload_path(instance, filename):
     """自定义头像存储路径：media/avatars/用户ID/随机文件名"""
     ext = filename.split('.')[-1]
     filename = f"{uuid4()}.{ext}"  # 避免文件名冲突
     return os.path.join('avatars', str(instance.user.id), filename)
+
+
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
