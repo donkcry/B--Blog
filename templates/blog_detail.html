@@ -23,6 +23,53 @@
             display: none; /* 初始隐藏 */
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
+
+        /* 分页按钮整体样式 */
+        .pagination {
+            display: flex;
+            justify-content: center; /* 核心：flex 水平居中 */
+            align-items: center;     /* 垂直居中（可选） */
+            margin-top: 20px;        /* 与评论列表的间距 */
+            margin-bottom: 30px;     /* 底部间距 */
+            padding-left: 0;         /* 清除默认内边距 */
+            list-style: none;        /* 清除默认列表样式 */
+        }
+
+        /* 当前页按钮样式 */
+        .pagination .page-item.active .page-link {
+            color: #fff;
+            background-color: #1a1d20;
+            border-color: #1a1d20;
+        }
+
+        /* 普通按钮样式 */
+        .pagination .page-link {
+            color: #333;
+            background-color: #f8f9fa;
+            border-color: #1a1d20;
+            margin: 0 2px; /* 按钮之间的小间距（可选） */
+        }
+
+        /* 按钮hover样式 */
+        .pagination .page-link:hover {
+            color: #fff;
+            background-color: #5A496E;
+            border-color: #1a1d20;
+        }
+
+        /* 禁用状态按钮样式 */
+        .pagination .page-item.disabled .page-link {
+            color: #a5a2a2;
+            background-color: #fff;
+            border-color: #a5a2a2;
+            cursor: not-allowed; /* 禁用鼠标指针（可选） */
+        }
+
+        /* 去除分页按钮的焦点边框 */
+        .pagination .page-link:focus {
+            outline: none;
+            box-shadow: none;
+        }
     </style>
 {% endblock %}
 
@@ -30,7 +77,7 @@
     <h1>{{ blog.title }}</h1>
     <hr>
     <div>
-        <img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}" alt="用户头像" class="rounded-circle mb-1" width="30px" height="30px">
+        <img src="{% if blog.author.profile.avatar %}{{ blog.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}" alt="用户头像" class="rounded-circle mb-1" width="30px" height="30px">
         <span>{{ blog.author.username }}</span>
         <span class="ms-1">于</span>
         <span class="ms-1">{{ blog.edit_time|date:"Y年m月d日 H:i" }}发布</span>
@@ -41,6 +88,7 @@
     </div>
     <hr>
     <div class="mt-1">
+        <!-- 评论总数仍用blog.comments.all|length -->
         <h4>评论({{ blog.comments.all|length }})</h4>
         <!-- 新增：悬浮提示框 -->
         <div class="empty-tip" id="commentEmptyTip">评论内容不能为空！</div>
@@ -60,11 +108,10 @@
     </div>
     <div>
         <ul class="list-group list-group-flush">
-            {% for comment in blog.comments.all %}
+            {% for comment in comments %}  {# 改为分页后的comments #}
                 <li class="list-group-item">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <!-- 注意：这里原代码用了user，应该改为comment.author -->
                             <img src="{% if comment.author.profile.avatar %}{{ comment.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}" alt="用户头像" class="rounded-circle" width="30px" height="30px">
                             <span>{{ comment.author.username }}</span>
                         </div>
@@ -76,8 +123,44 @@
                         {{ comment.content }}
                     </div>
                 </li>
+            {% empty %}  {# 新增：无评论时的提示 #}
+                <li class="list-group-item text-center text-muted">暂无评论，快来抢沙发吧～</li>
             {% endfor %}
         </ul>
+
+        <!-- 替换原有的分页控件代码 -->
+        {% if comment_paginator.num_pages > 1 %}
+            <nav aria-label="评论分页">
+                <ul class="pagination py-3">
+                    <!-- 上一页：增加条件判断，避免页码小于1 -->
+                    <li class="page-item {% if not comments.has_previous %}disabled{% endif %}">
+                        <a class="page-link"
+                           href="{% if comments.has_previous %}?comment_page={{ comments.previous_page_number }}{% else %}javascript:void(0);{% endif %}"
+                           aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+
+                    <!-- 页码（显示当前页前后2页，最多显示5个页码） -->
+                    {% for num in comment_paginator.page_range %}
+                        {% if num >= current_comment_page|add:-2 and num <= current_comment_page|add:2 %}
+                            <li class="page-item {% if num == current_comment_page %}active{% endif %}">
+                                <a class="page-link" href="?comment_page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- 下一页：同理增加条件判断，避免页码超出总页数 -->
+                    <li class="page-item {% if not comments.has_next %}disabled{% endif %}">
+                        <a class="page-link"
+                           href="{% if comments.has_next %}?comment_page={{ comments.next_page_number }}{% else %}javascript:void(0);{% endif %}"
+                           aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        {% endif %}
     </div>
 
     <script>
