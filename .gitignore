@@ -1,25 +1,38 @@
-# 虚拟环境（根据你用的环境工具选择，比如venv/pipenv/poetry）
+# 虚拟环境
 venv/
+
+# 环境变量
 .env
+.env.local
+.env.prod
+.env.dev
+
+# Python包管理
 Pipfile
 Pipfile.lock
 poetry.lock
+
+# Python编译缓存
 __pycache__/
 *.py[cod]
 *$py.class
+*.py.bak  # 补充：py文件备份
 
 # Django相关
 db.sqlite3
 db.sqlite3-journal
-media/
-staticfiles/
-.env.local
-.env.prod
-.env.dev
+staticfiles/  # 服务器端生成，忽略
+media/*          # 忽略media下的所有文件
+!media/.gitkeep  # 保留media空目录（手动在media下建一个空的.gitkeep文件）
+media/avatars/*  # 单独忽略用户上传的头像目录
 *.log
 local_settings.py
 
-# PyCharm/IDE配置
+# Celery（可选，用了就加）
+celerybeat-schedule
+celerybeat.pid
+
+# IDE/编辑器配置
 .idea/
 .vscode/
 *.swp
