@@ -17,3 +17,4 @@ db.sqlite3-journal
 # 忽略media下的用户上传文件（但保留avatars目录结构）
 /media/avatars/*
 !media/
+!media/avatars/.gitkeep
