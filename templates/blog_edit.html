@@ -10,7 +10,6 @@
             rel="stylesheet"
     />
     <style>
-        /* 原有编辑器、分类组件样式保留 */
         #editor—wrapper {
             border: 1px solid #1a1d20;
             z-index: 100;
@@ -22,7 +21,6 @@
             height: 500px;
         }
 
-        /* 自定义分类组件样式（原有保留） */
         .custom-select-input-group {
             position: relative;
             width: 100%;
@@ -73,7 +71,6 @@
             border-bottom-right-radius: 8px;
         }
 
-        /* 标题、分类输入框边框（原有保留） */
         .form-control {
             border: 1px solid #1a1d20 !important;
             border-radius: 2px;
@@ -83,13 +80,12 @@
             border-color: #1a1d20 !important;
         }
 
-        /* 新增：错误提示框样式（和详情页统一） */
         .error-tip {
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: #dc3545; /* 红色系，和评论错误提示一致 */
+            background-color: #dc3545;
             color: white;
             padding: 12px 24px;
             border-radius: 6px;
@@ -98,7 +94,6 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             font-size: 14px;
         }
-        /* 新增：错误字段高亮样式 */
         .form-control.is-invalid {
             border-color: #dc3545 !important;
             box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
@@ -112,33 +107,27 @@
 
     <div class="error-tip" id="publishErrorTip"></div>
 
-
-    <!-- 存储路由模板：用于拼接博客详情页URL -->
     <div id="url-templates" data-blog-detail-url="{% url 'blog:blog_detail' blog_id=0 %}"></div>
 
     <h1 style="color: #1a1d20">发布博客</h1>
     <div class="py-2">
         <form action="" method="post" id="blog-form">
-        {% csrf_token %}
+            {% csrf_token %}
             <div class="mb-2">
                 <label class="form-label">标题</label>
                 <input type="text" class="form-control" name="title">
             </div>
-            <!-- 自定义分类选择+输入组件 -->
             <div class="mb-2">
                 <label class="form-label">分类</label>
                 <div class="custom-select-input-group">
-                    <!-- 输入框 -->
                     <input
-                        type="text"
-                        class="form-control custom-select-input"
-                        name="category_name"
-                        placeholder="选择或输入分类"
-                        id="category-input"
+                            type="text"
+                            class="form-control custom-select-input"
+                            name="category_name"
+                            placeholder="选择或输入分类"
+                            id="category-input"
                     >
-                    <!-- 下拉箭头 -->
                     <span class="custom-select-arrow">▼</span>
-                    <!-- 下拉选项列表（默认隐藏） -->
                     <div class="custom-select-options" id="category-options">
                         {% for category in categories %}
                             <div class="custom-select-option" data-value="{{ category.name }}">
@@ -151,21 +140,18 @@
             <div class="mb-2">
                 <label class="form-label">内容</label>
                 <div id="editor—wrapper">
-                    <div id="toolbar-container"><!-- 工具栏 --></div>
-                    <div id="editor-container"><!-- 编辑器 --></div>
+                    <div id="toolbar-container"></div>
+                    <div id="editor-container"></div>
                 </div>
-                <!-- 隐藏字段：存储富文本内容 -->
                 <input type="hidden" name="content" id="content-hidden">
             </div>
             <div class="mb-2 text-end">
-                <button class="btn btn-primary" id="submit-btn">发布</button>
+                <button class="btn btn-dark" id="submit-btn">发布</button>
             </div>
         </form>
     </div>
 
-    <!-- 组件交互JS + 富文本初始化 + 表单提交处理 -->
     <script>
-        // 1. 初始化富文本编辑器（原有逻辑保留）
         const { createEditor, createToolbar } = window.wangEditor
         const editorConfig = {
             placeholder: '请输入博客内容...',
@@ -186,7 +172,7 @@
             mode: 'default'
         })
 
-        // 2. 分类下拉组件逻辑（原有保留）
+        // 分类下拉逻辑
         const input = document.getElementById('category-input');
         const optionsContainer = document.getElementById('category-options');
         const options = document.querySelectorAll('.custom-select-option');
@@ -223,41 +209,42 @@
             arrow.textContent = '▼';
         }
 
-        // 3. 新增：通用提示函数
+        // 提示
         function showErrorTip(msg) {
             const tipBox = document.getElementById('publishErrorTip');
             tipBox.textContent = msg;
             tipBox.style.display = 'block';
-            // 3秒后自动隐藏
             setTimeout(() => {
                 tipBox.style.display = 'none';
             }, 3000);
         }
 
-        // 4. 新增：清除所有字段错误样式
         function clearInvalidStyles() {
             document.querySelectorAll('.form-control.is-invalid').forEach(el => {
                 el.classList.remove('is-invalid');
             });
         }
 
-        // 5. 改造表单提交逻辑（移除alert，用悬浮提示）
+        // 🔥 关键：判断内容是否真的为空（过滤标签）
+        function isEditorEmpty() {
+            const html = editor.getHtml().trim();
+            const text = html.replace(/<[^>]+>/g, '').trim();
+            return text === '';
+        }
+
+        // 表单提交
         document.getElementById('blog-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            // 清除之前的错误样式
             clearInvalidStyles();
 
-            // 同步富文本内容
-            const html = editor.getHtml()
+            const html = editor.getHtml();
             document.getElementById('content-hidden').value = html;
 
-            // 获取表单字段
             const titleInput = document.querySelector('input[name="title"]');
             const categoryInput = document.querySelector('input[name="category_name"]');
             const title = titleInput.value.trim();
             const category = categoryInput.value.trim();
 
-            // 前端基础验证（非空）
             if (!title) {
                 titleInput.classList.add('is-invalid');
                 showErrorTip('标题不能为空！');
@@ -270,13 +257,14 @@
                 categoryInput.focus();
                 return;
             }
-            if (!html.trim()) {
-                showErrorTip('内容不能为空！');
+
+            // 🔥 前端强制拦截空内容
+            if (isEditorEmpty()) {
+                showErrorTip('文章内容不能为空！');
                 editor.focus();
                 return;
             }
 
-            // AJAX提交表单
             fetch('', {
                 method: 'POST',
                 headers: {
@@ -288,50 +276,31 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.code === 200) {
-                        // 成功：跳转详情页
                         window.location.href = data.data.redirect_url;
                     } else {
-                        // 失败：格式化错误信息
-                        let errorMsg = '';
+                        let errorMsg = data.message || '发布失败';
                         if (data.errors) {
-                            // 表单字段错误：拼接友好提示
                             const errorMap = {
                                 'title': '标题',
                                 'content': '内容',
                                 'category_name': '分类'
                             };
-                            const errorList = Object.entries(data.errors).map(([field, msg]) => {
-                                // 给错误字段加高亮
-                                const inputEl = document.querySelector(`input[name="${field}"]`) ||
-                                    (field === 'content' ? editor : null);
-                                if (inputEl && inputEl.classList) {
-                                    inputEl.classList.add('is-invalid');
-                                }
-                                // 格式化提示文本
-                                return `${errorMap[field] || field}：${msg}`;
-                            });
-                            errorMsg = errorList.join('；');
-                        } else {
-                            // 其他错误（如创建失败）
-                            errorMsg = data.message || '发布失败，请重试！';
+                            errorMsg = Object.entries(data.errors).map(([f, m]) => `${errorMap[f] || f}：${m}`).join('；');
                         }
-                        // 显示悬浮提示
                         showErrorTip(errorMsg);
                     }
                 })
-                .catch(error => {
-                    console.error('请求失败：', error);
-                    showErrorTip('网络错误，请检查网络后重试！');
+                .catch(() => {
+                    showErrorTip('网络错误，请重试！');
                 });
         });
 
-        // 6. 新增：输入框输入时移除错误样式
         document.querySelectorAll('.form-control').forEach(el => {
             el.addEventListener('input', () => {
                 el.classList.remove('is-invalid');
             });
         });
-        // 富文本编辑器输入时清除内容错误提示（可选）
+
         editor.on('change', () => {
             document.getElementById('publishErrorTip').style.display = 'none';
         });

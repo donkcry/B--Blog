@@ -85,6 +85,16 @@ def blog_edit(request):
             title = form.cleaned_data.get('title')
             content = form.cleaned_data.get('content')
             category_id = form.cleaned_data.get('category_name')
+
+            # ====================== 新增：后端强制判断内容不能为空 ======================
+            if not content or content.strip() == '' or content.strip() == '<p><br></p>':
+                return JsonResponse({
+                    'code': 400,
+                    'message': '文章内容不能为空！',
+                    'errors': {'content': '文章内容不能为空！'}
+                })
+            # ========================================================================
+
             try:
                 blog = Blog.objects.create(
                     title=title,
@@ -92,9 +102,7 @@ def blog_edit(request):
                     category_id=category_id,
                     author=request.user
                 )
-                # 新增：添加成功提示（存储到session）
                 messages.success(request, '博客发布成功！')
-                # 直接返回跳转URL，让前端跳转
                 return JsonResponse({
                     'code':200,
                     'message':'博客发布成功！',
@@ -102,7 +110,6 @@ def blog_edit(request):
                 })
             except Exception as e:
                 print(f"创建博客失败：{str(e)}")
-                # 新增：失败提示
                 messages.error(request, f'博客发布失败：{str(e)}')
                 return JsonResponse({
                     'code':500,
@@ -110,12 +117,10 @@ def blog_edit(request):
                     'error':str(e)
                 })
         else:
-            # 表单错误：拼接错误信息
             error_msg = {}
             for field, errors in form.errors.items():
                 error_msg[field] = errors[0]
             print("表单错误：", error_msg)
-            # 失败不跳转，前端提示
             return JsonResponse({
                 'code':400,
                 'message':'参数错误！',

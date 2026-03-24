@@ -3,6 +3,25 @@
 {% block title %}登录{% endblock %}
 {% block head %}
     <style>
+        #loginBox {
+            border: 2px solid #000 !important;
+            border-radius: 8px !important;
+            padding: 30px !important;
+            width: 100%;
+            max-width: 330px;
+            color: #000 !important;
+            /* 🔥 这里设置背景色为 rgb(180,180,180) 🔥 */
+            background-color: rgb(220, 220, 220) !important;
+        }
+
+        /* 标题下方分割线样式 */
+        .login-title-divider {
+            height: 1px;
+            background-color: #000;
+            margin: 1rem auto 1.5rem auto;
+            width: 80%;
+        }
+
         .custom-alert {
             position: fixed;
             top: 20px;
@@ -26,32 +45,32 @@
         }
     </style>
 {% endblock %}
+
 {% block main %}
-    <div style="max-width: 330px" class="m-auto">
-        <h1 class="text-center">登录</h1>
-        <form id="loginForm" action="{% url 'BLauth:login' %}" method="post">  <!-- 新增：明确action地址 -->
-            {% csrf_token %}
-            <div class="mb-2">
-                <label>邮箱</label>
-                <input type="email" class="form-control" name="email" placeholder="请输入邮箱" value="{{ prev_email }}">
-            </div>
-            <div class="mb-2">
-                <label>密码</label>
-                <input type="password" name="password" class="form-control" placeholder="请输入密码">
-            </div>
-            <div class="form-check mb-4 d-flex justify-content-between align-items-center">
-                <div>
-                    <input class="form-check-input" type="checkbox" name="remember_me" value="1" id="checkDefault">
-                    <label class="form-check-label mb-2" for="checkDefault">
-                        记住我
-                    </label>
+    <div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 100%;">
+        <div id="loginBox">
+            <h1 class="text-center mb-0">登录</h1>
+            <div class="login-title-divider"></div>
+            <form id="loginForm" action="{% url 'BLauth:login' %}" method="post">
+                {% csrf_token %}
+                <div class="mb-2">
+                    <label>邮箱</label>
+                    <input type="email" class="form-control" name="email" placeholder="请输入邮箱" value="{{ prev_email }}">
                 </div>
-                <a href="{% url 'BLauth:forgot_password' %}" class="text-dark">忘记密码？</a>
-            </div>
-            <div>
-                <button class="btn btn-outline-dark w-100 mb-4" type="submit">登录</button>
-            </div>
-        </form>
+                <div class="mb-2">
+                    <label>密码</label>
+                    <input type="password" name="password" class="form-control" placeholder="请输入密码">
+                </div>
+                <div class="form-check mb-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <input class="form-check-input" type="checkbox" name="remember_me" value="1" id="checkDefault">
+                        <label class="form-check-label mb-2" for="checkDefault">记住我</label>
+                    </div>
+                    <a href="{% url 'BLauth:forgot_password' %}" class="text-dark">忘记密码？</a>
+                </div>
+                <button class="btn btn-outline-dark w-100" type="submit">登录</button>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -81,7 +100,6 @@
                 }
             });
 
-            // 统一用JS触发弹窗，移除HTML硬编码的弹窗容器
             {% if login_error %}
                 showCustomAlert('邮箱或密码错误，请重新输入！', 'error');
             {% endif %}

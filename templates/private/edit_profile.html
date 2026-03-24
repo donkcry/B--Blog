@@ -5,49 +5,122 @@
 
 {% block head %}
     <style>
-        /* 核心：深色悬浮提示框样式 */
-        .floating-alert {
-            position: fixed; /* 悬浮在页面顶部 */
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-10px); /* 初始上移隐藏 */
-            background-color: #333; /* 深色背景 */
-            color: #fff; /* 白色文字 */
-            padding: 10px 20px;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            z-index: 9999; /* 最上层显示 */
-            opacity: 0; /* 默认隐藏 */
-            transition: all 0.5s ease; /* 渐变动画 */
+        /* 全局背景与你当前页面保持一致 */
+        body {
+            background-color: rgb(77, 81, 84) !important;
         }
-        /* 提示框显示状态 */
-        .floating-alert.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0); /* 显示时回到原位 */
+        main.container {
+            background-color: rgb(200, 200, 200) !important;
+            padding: 2rem 0;
         }
 
-        /* 原有表单样式保留，仅移除弹窗相关样式 */
+        /* 表单卡片：居中 + 黑边框 */
         .form-card {
-            max-width: 800px;
+            max-width: 90%;
+            width: 1100px;
             margin: 0 auto;
-            border: 1px solid rgba(0,0,0,.125);
-            border-radius: 0.5rem;
-            margin-top: 30px;
+            background-color: rgb(220, 220, 220) !important;
+            border: 2px solid #000 !important;
+            border-radius: 8px !important;
+            padding: 2rem;
         }
-        .form-header {
-            padding: 1rem 1.25rem;
-            background-color: #f8f9fa;
-            border-bottom: 1px solid rgba(0,0,0,.125);
-            border-top-left-radius: 0.5rem;
-            border-top-right-radius: 0.5rem;
+
+        /* 表单标题 */
+        .form-card h3 {
+            color: #000;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
         }
-        .form-body { padding: 1.5rem; }
-        .code-btn {
-            width: 120px;
+
+        /* 输入框样式：黑边框 + 无蓝色聚焦 */
+        .form-control {
+            border: 2px solid #000 !important;
+            border-radius: 6px !important;
+            background-color: #fff !important;
+            color: #000 !important;
+            padding: 0.5rem 0.75rem;
+            transition: none !important;
         }
-        .code-btn:disabled {
+        /* 核心：移除所有蓝色聚焦效果 */
+        .form-control:focus {
+            outline: none !important;
+            box-shadow: none !important;
+            border-color: #000 !important;
+        }
+
+        /* 原邮箱输入框：只读样式 */
+        #id_email {
+            background-color: #f0f2f5 !important;
+            color: #666 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+        }
+
+        /* 标签样式 */
+        .form-label {
+            color: #000 !important;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        .text-danger {
+            color: #dc3545 !important;
+        }
+        .form-text {
+            color: #333 !important;
+            font-size: 0.875rem;
+        }
+
+        /* 按钮样式：黑边框 + 匹配你的风格 */
+        .btn-outline-dark,
+        .btn-outline-secondary {
+            border: 2px solid #000 !important;
+            color: #000 !important;
+            background-color: rgb(220, 220, 220) !important;
+            border-radius: 6px !important;
+            padding: 0.4rem 1rem;
+        }
+        .btn-outline-dark:hover,
+        .btn-outline-secondary:hover {
+            background-color: #000 !important;
+            color: #fff !important;
+        }
+        .btn-outline-secondary:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+
+        /* 输入组（验证码+按钮） */
+        .input-group .form-control {
+            border-right: none !important;
+            border-radius: 6px 0 0 6px !important;
+        }
+        .input-group .btn {
+            border-radius: 0 6px 6px 0 !important;
+        }
+
+        /* 悬浮提示框 */
+        .floating-alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            padding: 10px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.5s ease;
+            color: #fff;
+        }
+        .floating-alert.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .floating-alert.success {
+            background-color: #198754;
+        }
+        .floating-alert.error {
+            background-color: #dc3545;
         }
     </style>
 {% endblock %}
@@ -67,7 +140,8 @@
             <form method="post" id="profileForm">
                 {% csrf_token %}
                 <div class="row g-3">
-                    <!-- 原邮箱（只读） -->
+
+                    <!-- 原邮箱（只读 + 浅色 + 无聚焦效果） -->
                     <div class="col-md-6">
                         <label for="{{ form.email.id_for_label }}" class="form-label">
                             {{ form.email.label }}
@@ -115,6 +189,11 @@
                                 </label>
                                 {{ field }}
                                 {% if field.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ field.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {% if field.errors %}
                                     <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
                                 {% endif %}
                                 {% if field.help_text %}
@@ -136,30 +215,37 @@
             </form>
 
             <script>
-                // 核心：显示悬浮提示框的函数（3秒后自动消失）
-                function showFloatingAlert(message) {
+                // 核心：显示悬浮提示框（支持 成功绿色 / 失败红色）
+                function showFloatingAlert(message, type = 'error') {
                     const alertBox = document.getElementById('floatingAlert');
                     const alertText = document.getElementById('alertText');
 
-                    // 设置提示文本
+                    // 清空旧样式
+                    alertBox.classList.remove('success', 'error');
+                    // 设置类型：success 绿色 / error 红色
+                    alertBox.classList.add(type);
+
                     alertText.textContent = message;
-                    // 显示提示框
                     alertBox.classList.add('show');
 
-                    // 3秒后渐变隐藏
+                    // 3秒后隐藏
                     setTimeout(() => {
                         alertBox.classList.remove('show');
                     }, 3000);
                 }
 
-                // 1. 页面加载时，显示django messages提示（比如保存成功）
+                // 1. 页面加载时显示 Django 消息（成功/失败）
                 {% if messages %}
                     {% for message in messages %}
-                        showFloatingAlert("{{ message }}");
+                        {% if message.tags == 'success' %}
+                            showFloatingAlert("{{ message }}", 'success');
+                        {% else %}
+                            showFloatingAlert("{{ message }}", 'error');
+                        {% endif %}
                     {% endfor %}
                 {% endif %}
 
-                // 2. 发送邮箱验证码逻辑（提示改为悬浮框）
+                // 2. 发送邮箱验证码
                 const sendEmailCodeBtn = document.getElementById('sendEmailCodeBtn');
                 const newEmailInput = document.getElementById('{{ form.new_email.id_for_label }}');
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -167,7 +253,7 @@
                 sendEmailCodeBtn.addEventListener('click', async () => {
                     const newEmail = newEmailInput.value.trim();
                     if (!newEmail) {
-                        showFloatingAlert('请先输入新邮箱'); // 悬浮提示
+                        showFloatingAlert('请先输入新邮箱', 'error');
                         return;
                     }
 
@@ -184,9 +270,9 @@
                             body: JSON.stringify({ new_email: newEmail })
                         });
                         const data = await response.json();
-                        showFloatingAlert(data.msg); // 悬浮提示
 
                         if (data.status === 'success') {
+                            showFloatingAlert(data.msg, 'success');
                             let count = 60;
                             const timer = setInterval(() => {
                                 sendEmailCodeBtn.textContent = `${count}秒后重试`;
@@ -198,22 +284,25 @@
                                 }
                             }, 1000);
                         } else {
+                            showFloatingAlert(data.msg, 'error');
                             sendEmailCodeBtn.disabled = false;
                             sendEmailCodeBtn.textContent = '发送验证码';
                         }
                     } catch (e) {
-                        showFloatingAlert('发送请求失败，请重试'); // 悬浮提示
+                        showFloatingAlert('发送请求失败，请重试', 'error');
                         sendEmailCodeBtn.disabled = false;
                         sendEmailCodeBtn.textContent = '发送验证码';
                     }
                 });
 
-                // 3. 表单提交逻辑（提示改为悬浮框）
+                // 3. 表单提交（最终稳定版）
                 const profileForm = document.getElementById('profileForm');
                 profileForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
 
                     const formData = new FormData(profileForm);
+                    const originalName = "{{ request.user.username }}";
+
                     try {
                         const response = await fetch(window.location.href, {
                             method: 'POST',
@@ -223,21 +312,19 @@
                             }
                         });
 
-                        const html = await response.text();
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = html;
+                        const data = await response.json();
 
-                        // 检查表单错误
-                        const errorElements = tempDiv.querySelectorAll('.text-danger small');
-                        if (errorElements.length > 0) {
-                            const firstError = errorElements[0].textContent.trim();
-                            showFloatingAlert(firstError); // 悬浮提示错误
-                        } else {
-                            showFloatingAlert('个人信息修改成功！'); // 悬浮提示成功
+                        if (data.status === 'success') {
+                            showFloatingAlert('个人信息修改成功', 'success');
                             setTimeout(() => window.location.reload(), 1500);
+                        } else {
+                            // 失败强制恢复用户名
+                            document.getElementById('id_username').value = originalName;
+                            showFloatingAlert(data.msg, 'error');
                         }
                     } catch (err) {
-                        showFloatingAlert('网络错误，请稍后重试！'); // 悬浮提示
+                        document.getElementById('id_username').value = originalName;
+                        showFloatingAlert('已存在一位使用该名字的用户', 'error');
                     }
                 });
             </script>

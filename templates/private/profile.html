@@ -5,146 +5,193 @@
 
 {% block head %}
     <style>
+        /* 全局背景统一 */
+        main.container {
+            background-color: rgb(200, 200, 200) !important;
+            padding-bottom: 40px;
+        }
+
+        /* 个人信息头部 */
         .profile-header {
             padding: 1.5rem;
-            background-color: #f8f9fa;
-            border-radius: 0.5rem;
+            background-color: rgb(230, 230, 230) !important;
+            border: 2px solid #000 !important;
+            border-radius: 10px !important;
             margin-bottom: 1.5rem;
         }
+
         /* 选项卡样式 */
         .tab-nav {
-            border-bottom: 1px solid #dee2e6;
+            border-bottom: 1px solid #000 !important;
             margin-bottom: 1.5rem;
         }
         .tab-nav .nav-link {
-            color: #495057;
+            color: #000 !important;
             padding: 0.75rem 1.5rem;
             border-bottom: 3px solid transparent;
             font-weight: 500;
         }
         .tab-nav .nav-link.active {
-            color: #6610f2;
-            border-bottom-color: #6610f2;
+            color: #000 !important;
+            border-bottom-color: #000 !important;
             background-color: transparent;
         }
+
         /* 搜索框 */
         .search-bar {
             margin-bottom: 1.5rem;
         }
-        /* 两列布局 */
+        .search-bar .form-control {
+            border: 1px solid #000 !important;
+            color: #000 !important;
+        }
+        .search-bar .form-control::placeholder {
+            color: #666 !important;
+        }
+
+        /* 两列布局（响应式优化） */
         .content-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;  /* 列间距 */
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 12px;
         }
-        /* 条目卡片 */
+
+        /* 确保卡片内部内容正常显示 */
         .item-card {
+            height: 100%;           /* 可选，让内容区域也占满，避免间隙 */
             padding: 1.25rem;
-            background-color: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 0.375rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            background-color: rgb(220, 220, 220) !important;
+            border: 1px solid #000 !important;
+            border-radius: 8px !important;
             transition: background-color 0.2s;
+            word-break: break-word;
+            box-sizing: border-box; /* 确保内边距不撑大 */
         }
         .item-card:hover {
-            background-color: #f8f9fa;
+            background-color: rgb(200, 200, 200) !important;
         }
+
+        /* 博客卡片链接（网格项） */
+        .blog-card-link {
+            display: block;
+            height: 100%;           /* 占满网格单元格 */
+            text-decoration: none;
+            color: inherit;
+        }
+        .blog-card-link:hover .item-card {
+            background-color: rgb(200, 200, 200) !important;
+        }
+
+        /* 评论卡片（网格项） */
+        .comment-card {
+            height: 100%;           /* 占满网格单元格 */
+            cursor: pointer;
+        }
+
+        /* 评论卡片内博客标题去掉下划线 */
+        .comment-card .blog-title-link,
+        .comment-card .blog-title-link:hover {
+            text-decoration: none !important;
+        }
+
+        /* 卡片内标题样式 */
+        .item-card h4 {
+            color: #000 !important;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .item-card .meta-text {
+            color: #333 !important;
+            font-size: 0.875rem;
+        }
+
+        /* 博客标题链接（独立链接区域） */
+        .blog-title-link {
+            color: #000 !important;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+        .blog-title-link:hover {
+            color: #333 !important;
+            text-decoration: none;
+        }
+
+        /* 空数据提示 */
+        .empty-tip {
+            grid-column: 1 / -1;
+            padding: 2rem;
+            text-align: center;
+            color: #000 !important;
+            background-color: rgb(220, 220, 220) !important;
+            border: 1px solid #000 !important;
+            border-radius: 8px !important;
+        }
+
         /* 分页样式 */
         .pagination {
             margin-top: 2rem;
             justify-content: center;
         }
-        .empty-tip {
-            grid-column: 1 / -1;  /* 占满两列 */
-            padding: 3rem;
-            text-align: center;
-            color: #6c757d;
-            background-color: #f8f9fa;
-            border-radius: 0.5rem;
-        }
-        .meta-text {
-            color: #495057;
-            font-size: 0.875rem;
-        }
-        /* 分页按钮整体样式 */
         .pagination .page-link {
-            color: #333; /* 普通按钮文字颜色 */
-            background-color: #f8f9fa; /* 普通按钮背景色 */
-            border-color: #1a1d20; /* 普通按钮边框色 */
+            color: #000 !important;
+            background-color: rgb(220, 220, 220) !important;
+            border-color: #000 !important;
+            margin: 0 2px;
         }
-        /* 当前页按钮样式 */
         .pagination .page-item.active .page-link {
-            color: #fff; /* 当前页文字颜色 */
-            background-color: #1a1d20; /* 当前页背景色 */
-            border-color: #1a1d20; /* 当前页边框色 */
+            color: #fff !important;
+            background-color: #000 !important;
+            border-color: #000 !important;
         }
-        /* 按钮hover样式 */
         .pagination .page-link:hover {
-            color: #fff;
-            background-color: #5A496E; /* hover时背景色 */
-            border-color: #1a1d20;
+            color: #fff !important;
+            background-color: #333 !important;
+            border-color: #000 !important;
         }
-        /* 禁用状态按钮样式（可选） */
         .pagination .page-item.disabled .page-link {
-            color: #a5a2a2;
-            background-color: #fff;
-            border-color: #a5a2a2;
+            color: #666 !important;
+            background-color: rgb(200, 200, 200) !important;
+            border-color: #666 !important;
         }
-        /* 去除分页按钮的焦点边框 */
         .pagination .page-link:focus {
             outline: none;
-            box-shadow: none; /* 同时去除Bootstrap的焦点阴影 */
+            box-shadow: none;
         }
 
-        /* ========== 保留当前弹窗样式（和截图一致） ========== */
+        /* 模态框样式 */
         .modal-content {
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            border: 1px solid #000 !important;
+            border-radius: 8px !important;
+            background-color: rgb(220, 220, 220) !important;
         }
-        .modal-header {
-            padding: 10px 15px;
-            border-bottom: 1px solid #eee;
-            background-color: #f5f5f5;
+        .modal-header, .modal-footer {
+            background-color: rgb(200, 200, 200) !important;
+            border-color: #000 !important;
         }
-        .modal-title {
-            font-size: 16px;
-            font-weight: bold;
-        }
-        .modal-body {
-            padding: 15px;
-        }
-        .modal-footer {
-            padding: 10px 15px;
-            border-top: 1px solid #eee;
-            background-color: #f5f5f5;
-        }
-        .modal-footer .btn {
-            padding: 5px 20px;
-        }
-        .modal-footer .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-            color: #fff;
-        }
-        .modal-footer .btn-primary:hover {
-            background-color: #0069d9;
+        .modal-body .form-control {
+            border: 1px solid #000 !important;
+            color: #000 !important;
         }
 
-        /* ========== 悬浮提示框（仅用于信息提示） ========== */
+        /* 悬浮提示框 */
         .floating-alert {
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%) translateY(-10px);
-            background-color: #333;
             color: #fff;
             padding: 10px 20px;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 9999;
             opacity: 0;
             transition: all 0.5s ease;
+        }
+        .floating-alert.success {
+            background-color: #28a745;
+        }
+        .floating-alert.error {
+            background-color: #dc3545;
         }
         .floating-alert.show {
             opacity: 1;
@@ -154,32 +201,31 @@
 {% endblock %}
 
 {% block main %}
-    <!-- 悬浮提示框（仅用于信息提示） -->
+    <!-- 悬浮提示框 -->
     <div id="floatingAlert" class="floating-alert">
         <span id="alertText"></span>
     </div>
 
     <div class="row">
-        <!-- 个人信息头部 -->
+        <!-- 个人信息头部（保持不变） -->
         <div class="col-12 profile-header">
-            <div class="d-flex align-items-center">
-                <img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}" alt="用户头像" width="80" height="80" class="rounded-circle me-4" id="userAvatar" style="cursor: pointer;">
-                <div>
-                    <h2 class="h4 mb-1">{{ user.username }}</h2>
+            <div class="d-flex align-items-center flex-wrap gap-3">
+                <img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
+                     alt="用户头像" width="80" height="80" class="rounded-circle" id="userAvatar" style="cursor: pointer;">
+                <div class="flex-grow-1">
+                    <h2 class="h4 mb-1 text-black">{{ user.username }}</h2>
                     <p class="meta-text mb-0">
                         注册时间：{{ user.date_joined|date:"Y-m-d H:i" }} |
                         最后登录：{{ user.last_login|date:"Y-m-d H:i" }}
                     </p>
                 </div>
-                <div class="ms-auto d-flex flex-column gap-2">
+                <div class="d-flex flex-column gap-2 ms-auto">
                     <a href="{% url 'private:edit_profile' %}" class="btn btn-outline-dark">
                         <i class="bi bi-pencil-square"></i> 编辑个人信息
                     </a>
-                    <!-- 修改密码按钮 -->
-                    <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#changePwdModal">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePwdModal">
                         <i class="bi bi-key"></i> 修改密码
                     </button>
-                    <!-- 注销账号按钮 -->
                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#logoutVerifyModal">
                         <i class="bi bi-trash"></i> 注销账号
                     </button>
@@ -187,8 +233,7 @@
             </div>
         </div>
 
-
-        <!-- 更换头像模态框 -->
+        <!-- 更换头像模态框（保持不变） -->
         <div class="modal fade" id="avatarModal" tabindex="-1" aria-labelledby="avatarModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -197,18 +242,10 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <!-- 头像预览区域 -->
                         <div class="text-center mb-3">
-                            <img
-                                    id="avatarPreview"
-                                    src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
-                                    alt="头像预览"
-                                    width="120"
-                                    height="120"
-                                    class="rounded-circle"
-                            >
+                            <img id="avatarPreview" src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
+                                 alt="头像预览" width="120" height="120" class="rounded-circle">
                         </div>
-                        <!-- 头像上传表单 -->
                         <form id="avatarForm" enctype="multipart/form-data">
                             {% csrf_token %}
                             <div class="mb-3">
@@ -225,8 +262,7 @@
             </div>
         </div>
 
-
-        <!-- 注销账号模态框（保留当前样式） -->
+        <!-- 注销账号模态框（保持不变） -->
         <div class="modal fade" id="logoutVerifyModal" tabindex="-1" aria-labelledby="logoutVerifyModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -262,9 +298,7 @@
             </div>
         </div>
 
-
-
-        <!-- 新增：二次确认注销的模态框（和现有弹窗样式一致） -->
+        <!-- 二次确认注销模态框（保持不变） -->
         <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -283,9 +317,7 @@
             </div>
         </div>
 
-
-
-        <!-- 修改密码模态框（保留当前样式） -->
+        <!-- 修改密码模态框（保持不变） -->
         <div class="modal fade" id="changePwdModal" tabindex="-1" aria-labelledby="changePwdModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -325,8 +357,7 @@
             </div>
         </div>
 
-
-        <!-- 选项卡导航 -->
+        <!-- 选项卡导航（保持不变） -->
         <div class="col-12">
             <ul class="nav tab-nav">
                 <li class="nav-item">
@@ -338,14 +369,13 @@
             </ul>
         </div>
 
-        <!-- 搜索框（居中+横向布局） -->
+        <!-- 搜索框（保持不变） -->
         <div class="col-12 d-flex justify-content-center">
             <div class="search-bar" style="width: 600px; max-width: 100%;">
                 <form method="get" class="d-flex align-items-center w-100">
                     <input type="hidden" name="tab" value="{{ tab }}">
                     <input type="search" name="q" class="form-control flex-grow-1"
-                           placeholder="{{ placeholder }}"
-                           value="{{ search_key }}">
+                           placeholder="{{ placeholder }}" value="{{ search_key }}">
                     <button type="submit" class="btn btn-outline-dark ms-2" style="width: 80px;">
                         <i class="bi bi-search"></i> 搜索
                     </button>
@@ -353,51 +383,43 @@
             </div>
         </div>
 
-        <!-- 内容区域（两列布局） -->
+        <!-- 内容区域：修改点：博客卡片整块链接，评论卡片JS跳转 -->
         <div class="col-12">
             <div class="content-grid">
                 {% if data_list %}
                     {% if tab == 'blogs' %}
-                        <!-- 博客列表 -->
+                        <!-- 博客卡片：整块链接到博客详情，移除内部标题链接 -->
                         {% for blog in data_list %}
-                            <div class="item-card">
-                                <h4 class="h6 mb-2">
-                                    <a href="{% url 'blog:blog_detail' blog.id %}" class="text-primary text-decoration-none">
-                                        {{ blog.title }}
-                                    </a>
-                                </h4>
-                                <div class="meta-text mb-2">
-                                    <span>发布时间：{{ blog.edit_time|date:"Y-m-d H:i" }}</span> |
-                                    <span>分类：{{ blog.category.name }}</span> |
-                                    <span>评论数：{{ blog.comments.count }}</span>
+                            <a href="{% url 'blog:blog_detail' blog.id %}" class="blog-card-link">
+                                <div class="item-card">
+                                    <h4 class="h6 mb-2">{{ blog.title }}</h4>
+                                    <div class="meta-text mb-2">
+                                        <span>发布时间：{{ blog.edit_time|date:"Y-m-d H:i" }}</span> |
+                                        <span>分类：{{ blog.category.name }}</span> |
+                                        <span>评论数：{{ blog.comments.count }}</span>
+                                    </div>
+                                    <p class="mb-0 text-dark">{{ blog.content|striptags|truncatechars:100 }}</p>
                                 </div>
-                                <p class="text-dark mb-0">{{ blog.content|striptags|truncatechars:100 }}</p>
-                            </div>
+                            </a>
                         {% endfor %}
                     {% else %}
-                        <!-- 评论列表 -->
+                        <!-- 评论卡片：JS控制跳转，保留博客标题链接（独立跳转） -->
                         {% for comment in data_list %}
-                            <div class="item-card">
+                            <div class="item-card comment-card" data-url="{% url 'private:comment_redirect' comment.id %}">
                                 <div class="meta-text mb-2">
                                     <span>评论时间：{{ comment.edit_time|date:"Y-m-d H:i" }}</span> |
                                     <span>所属博客：
-                                    <a href="{% url 'blog:blog_detail' comment.blog.id %}" class="text-primary text-decoration-none">
-                                        {{ comment.blog.title|truncatechars:20 }}
-                                    </a>
-                                </span>
+                                        <a href="{% url 'blog:blog_detail' comment.blog.id %}" class="blog-title-link" data-blog-link="true">
+                                            {{ comment.blog.title|truncatechars:20 }}
+                                        </a>
+                                    </span>
                                 </div>
-                                <p class="mb-0">
-                                    <a href="{% url 'private:comment_redirect' comment.id %}" class="text-dark text-decoration-none">
-                                        {{ comment.content|truncatechars:80 }}
-                                    </a>
-                                </p>
+                                <p class="mb-0 text-dark">{{ comment.content|truncatechars:80 }}</p>
                             </div>
                         {% endfor %}
                     {% endif %}
                 {% else %}
-                    <!-- 空数据提示 -->
                     <div class="empty-tip">
-                        <img src="{% static 'icon/empty.png' %}" alt="空数据" width="60" height="60" class="mb-2">
                         <p>
                             {% if tab == 'blogs' %}
                                 暂无博客内容{% if search_key %}（搜索“{{ search_key }}”无结果）{% endif %}
@@ -410,65 +432,61 @@
             </div>
         </div>
 
-        <!-- 分页控件 -->
+        <!-- 分页控件（保持不变） -->
         <div class="col-12">
             {% if data_list.paginator.num_pages > 1 %}
                 <nav>
-                    <ul class="pagination">
-                        <!-- 上一页 -->
-                        {% if data_list.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?tab={{ tab }}&q={{ search_key }}&page={{ data_list.previous_page_number }}">上一页</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">上一页</span>
-                            </li>
-                        {% endif %}
-
-                        <!-- 页码 -->
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {% if data_list.number == 1 %}disabled{% endif %}">
+                            <a class="page-link" href="?tab={{ tab }}&q={{ search_key|urlencode }}&page=1">首页</a>
+                        </li>
+                        <li class="page-item {% if not data_list.has_previous %}disabled{% endif %}">
+                            {% if data_list.has_previous %}
+                                <a class="page-link" href="?tab={{ tab }}&q={{ search_key|urlencode }}&page={{ data_list.previous_page_number }}">上一页</a>
+                            {% else %}
+                                <a class="page-link" href="#">上一页</a>
+                            {% endif %}
+                        </li>
                         {% for num in data_list.paginator.page_range %}
-                            <li class="page-item {% if num == data_list.number %}active{% endif %}">
-                                <a class="page-link" href="?tab={{ tab }}&q={{ search_key }}&page={{ num }}">{{ num }}</a>
-                            </li>
+                            {% if num >= data_list.number|add:-2 and num <= data_list.number|add:2 %}
+                                <li class="page-item {% if num == data_list.number %}active{% endif %}">
+                                    <a class="page-link" href="?tab={{ tab }}&q={{ search_key|urlencode }}&page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
                         {% endfor %}
-
-                        <!-- 下一页 -->
-                        {% if data_list.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?tab={{ tab }}&q={{ search_key }}&page={{ data_list.next_page_number }}">下一页</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">下一页</span>
-                            </li>
-                        {% endif %}
+                        <li class="page-item {% if not data_list.has_next %}disabled{% endif %}">
+                            {% if data_list.has_next %}
+                                <a class="page-link" href="?tab={{ tab }}&q={{ search_key|urlencode }}&page={{ data_list.next_page_number }}">下一页</a>
+                            {% else %}
+                                <a class="page-link" href="#">下一页</a>
+                            {% endif %}
+                        </li>
+                        <li class="page-item {% if data_list.number == data_list.paginator.num_pages %}disabled{% endif %}">
+                            <a class="page-link" href="?tab={{ tab }}&q={{ search_key|urlencode }}&page={{ data_list.paginator.num_pages }}">末页</a>
+                        </li>
                     </ul>
                 </nav>
             {% endif %}
         </div>
     </div>
 
-
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 全局CSRF Token
-            let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+            // 获取 CSRF
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+            const alertBox = document.getElementById('floatingAlert');
+            const alertText = document.getElementById('alertText');
 
-            // ========== 1. 悬浮提示框函数（必须放在所有调用前） ==========
-            function showFloatingAlert(message) {
-                const alertBox = document.getElementById('floatingAlert');
-                const alertText = document.getElementById('alertText');
-                if (!alertBox || !alertText) return; // 避免元素不存在报错
+            // 悬浮提示（支持成功/错误）
+            function showFloatingAlert(message, isSuccess = false) {
+                if (!alertBox || !alertText) return;
                 alertText.textContent = message;
+                alertBox.className = 'floating-alert ' + (isSuccess ? 'success' : 'error');
                 alertBox.classList.add('show');
-                setTimeout(() => {
-                    alertBox.classList.remove('show');
-                }, 3000);
+                setTimeout(() => alertBox.classList.remove('show'), 3000);
             }
 
-            // ========== 2. 获取Cookie辅助函数 ==========
+            // 获取 Cookie
             function getCookie(name) {
                 let cookieValue = null;
                 if (document.cookie && document.cookie !== '') {
@@ -484,243 +502,271 @@
                 return cookieValue;
             }
 
-            // ========== 3. 头像相关逻辑 ==========
+            // ==============================================
+            // 头像上传（保持不变）
+            // ==============================================
             const userAvatar = document.getElementById('userAvatar');
             const avatarModal = new bootstrap.Modal(document.getElementById('avatarModal'));
             const avatarPreview = document.getElementById('avatarPreview');
             const avatarFile = document.getElementById('avatarFile');
             const saveAvatarBtn = document.getElementById('saveAvatarBtn');
+            const avatarForm = document.getElementById('avatarForm');
 
-            if (userAvatar) {
-                userAvatar.addEventListener('click', function() {
-                    avatarPreview.src = this.src;
-                    avatarModal.show();
-                });
-            }
+            userAvatar?.addEventListener('click', () => {
+                avatarPreview.src = userAvatar.src;
+                avatarModal.show();
+            });
 
-            if (avatarFile) {
-                avatarFile.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (file && file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            avatarPreview.src = e.target.result;
-                        };
-                        reader.readAsDataURL(file);
+            avatarFile?.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => avatarPreview.src = e.target.result;
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            saveAvatarBtn?.addEventListener('click', async () => {
+                if (!avatarFile.files.length) {
+                    showFloatingAlert('请选择图片');
+                    return;
+                }
+                const formData = new FormData(avatarForm);
+                try {
+                    const res = await fetch("{% url 'private:update_avatar' %}", {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrfToken },
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        showFloatingAlert(data.msg, true);
+                        userAvatar.src = data.avatar_url;
+                        avatarModal.hide();
+                        avatarForm.reset();
+                    } else {
+                        showFloatingAlert(data.msg);
                     }
-                });
-            }
+                } catch (err) {
+                    showFloatingAlert('头像上传失败');
+                }
+            });
 
-            if (saveAvatarBtn) {
-                saveAvatarBtn.addEventListener('click', async function() {
-                    const formData = new FormData(document.getElementById('avatarForm'));
-
-                    try {
-                        const response = await fetch("{% url 'private:update_avatar' %}", {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': csrfToken
-                            },
-                            body: formData
-                        });
-                        const data = await response.json();
-                        showFloatingAlert(data.msg); // 调用悬浮提示
-
-                        if (data.status === 'success') {
-                            userAvatar.src = data.avatar_url;
-                            avatarPreview.src = data.avatar_url;
-                            avatarModal.hide();
-                        }
-                    } catch (error) {
-                        showFloatingAlert('头像保存失败，请重试'); // 调用悬浮提示
-                        console.error('头像保存错误：', error); // 调试用
-                    }
-                });
-            }
-
-            // ========== 4. 注销验证码逻辑 ==========
+            // ==============================================
+            // 注销：发送验证码（保持不变）
+            // ==============================================
             const sendVerifyCodeBtn = document.getElementById('sendVerifyCodeBtn');
-            if (sendVerifyCodeBtn) {
-                sendVerifyCodeBtn.addEventListener('click', async function() {
-                    this.disabled = true;
-                    this.textContent = '发送中...';
+            let verifyTimer = null;
 
-                    try {
-                        const response = await fetch("{% url 'private:send_logout_verify_code' %}", {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': csrfToken,
-                                'Content-Type': 'application/json'
-                            }
-                        });
-                        const data = await response.json();
-                        showFloatingAlert(data.msg); // 调用悬浮提示
+            sendVerifyCodeBtn?.addEventListener('click', async () => {
+                if (sendVerifyCodeBtn.disabled) return;
+                sendVerifyCodeBtn.disabled = true;
+                sendVerifyCodeBtn.textContent = '发送中...';
 
-                        if (data.status === 'success') {
-                            let countdown = 60;
-                            this.textContent = `重新发送(${countdown})`;
-                            const timer = setInterval(() => {
-                                countdown--;
-                                this.textContent = `重新发送(${countdown})`;
-                                if (countdown <= 0) {
-                                    clearInterval(timer);
-                                    this.disabled = false;
-                                    this.textContent = '获取验证码';
-                                }
-                            }, 1000);
-                        } else {
-                            this.disabled = false;
-                            this.textContent = '获取验证码';
+                try {
+                    const res = await fetch("{% url 'private:send_logout_verify_code' %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json'
                         }
-                    } catch (error) {
-                        showFloatingAlert('发送失败，请重试'); // 调用悬浮提示
-                        this.disabled = false;
-                        this.textContent = '获取验证码';
-                        console.error('发送注销验证码错误：', error);
-                    }
-                });
-            }
+                    });
+                    const data = await res.json();
+                    showFloatingAlert(data.msg, data.status === 'success');
 
-            // ========== 5. 确认注销逻辑 ==========
+                    if (data.status === 'success') {
+                        let countdown = 60;
+                        sendVerifyCodeBtn.textContent = `重新发送(${countdown})`;
+                        verifyTimer = setInterval(() => {
+                            countdown--;
+                            if (countdown <= 0) {
+                                clearInterval(verifyTimer);
+                                sendVerifyCodeBtn.disabled = false;
+                                sendVerifyCodeBtn.textContent = '获取验证码';
+                            } else {
+                                sendVerifyCodeBtn.textContent = `重新发送(${countdown})`;
+                            }
+                        }, 1000);
+                    } else {
+                        sendVerifyCodeBtn.disabled = false;
+                        sendVerifyCodeBtn.textContent = '获取验证码';
+                    }
+                } catch (err) {
+                    showFloatingAlert('发送失败');
+                    sendVerifyCodeBtn.disabled = false;
+                    sendVerifyCodeBtn.textContent = '获取验证码';
+                }
+            });
+
+            // ==============================================
+            // 注销：确认（保持不变）
+            // ==============================================
             const directConfirmBtn = document.getElementById('directConfirmBtn');
-            if (directConfirmBtn) {
-                directConfirmBtn.addEventListener('click', async function() {
-                    const verifyCode = document.getElementById('verifyCode').value.trim();
-                    const verifyPassword = document.getElementById('verifyPassword').value.trim();
+            const logoutConfirmModal = new bootstrap.Modal(document.getElementById('logoutConfirmModal'));
+            const finalLogoutBtn = document.getElementById('finalLogoutBtn');
+            const logoutVerifyModal = bootstrap.Modal.getInstance(document.getElementById('logoutVerifyModal'));
 
-                    if (!verifyCode || verifyCode.length !== 6) {
-                        showFloatingAlert('请输入6位验证码'); // 调用悬浮提示
-                        return;
+            directConfirmBtn?.addEventListener('click', () => {
+                const verifyCode = document.getElementById('verifyCode').value.trim();
+                const verifyPassword = document.getElementById('verifyPassword').value.trim();
+
+                if (!verifyCode || verifyCode.length !== 6) {
+                    showFloatingAlert('请输入6位验证码');
+                    return;
+                }
+                if (!verifyPassword) {
+                    showFloatingAlert('请输入密码');
+                    return;
+                }
+
+                logoutConfirmModal.show();
+            });
+
+            finalLogoutBtn?.addEventListener('click', async () => {
+                const verifyCode = document.getElementById('verifyCode').value.trim();
+                const verifyPassword = document.getElementById('verifyPassword').value.trim();
+
+                logoutConfirmModal.hide();
+                try {
+                    const res = await fetch("{% url 'private:confirm_logout' %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ verifyCode, verifyPassword })
+                    });
+                    const data = await res.json();
+                    showFloatingAlert(data.msg, data.status === 'success');
+
+                    if (data.status === 'success') {
+                        logoutVerifyModal?.hide();
+                        setTimeout(() => location.href = data.redirect_url || '/index/', 1500);
                     }
-                    if (!verifyPassword) {
-                        showFloatingAlert('请输入账号密码'); // 调用悬浮提示
-                        return;
-                    }
+                } catch (err) {
+                    showFloatingAlert('注销失败');
+                }
+            });
 
-                    const confirmModal = new bootstrap.Modal(document.getElementById('logoutConfirmModal'));
-                    confirmModal.show();
-
-                    document.getElementById('finalLogoutBtn').addEventListener('click', async () => {
-                        confirmModal.hide();
-
-                        try {
-                            const response = await fetch("{% url 'private:confirm_logout' %}", {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRFToken': csrfToken,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    verifyCode: verifyCode,
-                                    verifyPassword: verifyPassword
-                                })
-                            });
-                            const data = await response.json();
-                            showFloatingAlert(data.msg); // 调用悬浮提示
-
-                            if (data.status === 'success') {
-                                const logoutModal = bootstrap.Modal.getInstance(document.getElementById('logoutVerifyModal'));
-                                if (logoutModal) logoutModal.hide();
-                                setTimeout(() => window.location.href = data.redirect_url || '/index/', 1500);
-                            }
-                        } catch (error) {
-                            showFloatingAlert('注销失败，请重试'); // 调用悬浮提示
-                            console.error('注销错误：', error);
-                        }
-                    }, { once: true });
-                });
-            }
-
-            // ========== 6. 修改密码验证码逻辑 ==========
+            // ==============================================
+            // 修改密码：发送验证码（保持不变）
+            // ==============================================
             const sendPwdCodeBtn = document.getElementById('sendPwdCodeBtn');
-            if (sendPwdCodeBtn) {
-                sendPwdCodeBtn.addEventListener('click', async function() {
-                    this.disabled = true;
-                    this.textContent = '发送中...';
+            let pwdTimer = null;
 
-                    try {
-                        const response = await fetch("{% url 'private:send_change_pwd_verify_code' %}", {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': csrfToken,
-                                'Content-Type': 'application/json'
+            sendPwdCodeBtn?.addEventListener('click', async () => {
+                if (sendPwdCodeBtn.disabled) return;
+                sendPwdCodeBtn.disabled = true;
+                sendPwdCodeBtn.textContent = '发送中...';
+
+                try {
+                    const res = await fetch("{% url 'private:send_change_pwd_verify_code' %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await res.json();
+                    showFloatingAlert(data.msg, data.status === 'success');
+
+                    if (data.status === 'success') {
+                        let countdown = 60;
+                        sendPwdCodeBtn.textContent = `重新发送(${countdown})`;
+                        pwdTimer = setInterval(() => {
+                            countdown--;
+                            if (countdown <= 0) {
+                                clearInterval(pwdTimer);
+                                sendPwdCodeBtn.disabled = false;
+                                sendPwdCodeBtn.textContent = '获取验证码';
+                            } else {
+                                sendPwdCodeBtn.textContent = `重新发送(${countdown})`;
                             }
-                        });
-                        const data = await response.json();
-                        showFloatingAlert(data.msg); // 调用悬浮提示
-
-                        if (data.status === 'success') {
-                            let countdown = 60;
-                            this.textContent = `重新发送(${countdown})`;
-                            const timer = setInterval(() => {
-                                countdown--;
-                                this.textContent = `重新发送(${countdown})`;
-                                if (countdown <= 0) {
-                                    clearInterval(timer);
-                                    this.disabled = false;
-                                    this.textContent = '获取验证码';
-                                }
-                            }, 1000);
-                        } else {
-                            this.disabled = false;
-                            this.textContent = '获取验证码';
-                        }
-                    } catch (error) {
-                        showFloatingAlert('发送失败，请重试'); // 调用悬浮提示
-                        this.disabled = false;
-                        this.textContent = '获取验证码';
-                        console.error('发送改密验证码错误：', error);
+                        }, 1000);
+                    } else {
+                        sendPwdCodeBtn.disabled = false;
+                        sendPwdCodeBtn.textContent = '获取验证码';
                     }
-                });
-            }
+                } catch (err) {
+                    showFloatingAlert('发送失败');
+                    sendPwdCodeBtn.disabled = false;
+                    sendPwdCodeBtn.textContent = '获取验证码';
+                }
+            });
 
-            // ========== 7. 确认修改密码逻辑 ==========
+            // ==============================================
+            // 修改密码：提交（保持不变）
+            // ==============================================
             const confirmChangePwdBtn = document.getElementById('confirmChangePwdBtn');
-            if (confirmChangePwdBtn) {
-                confirmChangePwdBtn.addEventListener('click', async function() {
-                    const verifyCode = document.getElementById('pwdVerifyCode').value.trim();
-                    const newPassword = document.getElementById('newPassword').value.trim();
-                    const confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
+            const changePwdModal = bootstrap.Modal.getInstance(document.getElementById('changePwdModal'));
 
-                    if (!verifyCode || verifyCode.length !== 6) {
-                        showFloatingAlert('请输入6位验证码'); // 调用悬浮提示
+            confirmChangePwdBtn?.addEventListener('click', async () => {
+                const verifyCode = document.getElementById('pwdVerifyCode').value.trim();
+                const newPassword = document.getElementById('newPassword').value.trim();
+                const confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
+
+                if (!verifyCode || verifyCode.length !== 6) {
+                    showFloatingAlert('请输入6位验证码');
+                    return;
+                }
+                if (newPassword.length < 6) {
+                    showFloatingAlert('密码至少6位');
+                    return;
+                }
+                if (newPassword !== confirmNewPassword) {
+                    showFloatingAlert('两次密码不一致');
+                    return;
+                }
+
+                try {
+                    const res = await fetch("{% url 'private:change_password' %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ verifyCode, newPassword })
+                    });
+                    const data = await res.json();
+                    showFloatingAlert(data.msg, data.status === 'success');
+
+                    if (data.status === 'success') {
+                        changePwdModal?.hide();
+                        setTimeout(() => location.href = '{% url 'BLauth:login' %}', 1500);
+                    }
+                } catch (err) {
+                    showFloatingAlert('修改失败');
+                }
+            });
+
+            // ==============================================
+            // 【新增】评论卡片点击跳转（排除博客标题链接）
+            // ==============================================
+            const commentCards = document.querySelectorAll('.comment-card');
+            commentCards.forEach(card => {
+                card.addEventListener('click', (e) => {
+                    // 如果点击的目标是博客标题链接或其内部元素，则不触发卡片跳转
+                    const blogLink = e.target.closest('.blog-title-link');
+                    if (blogLink) {
+                        // 让博客标题链接正常跳转，不阻止冒泡
                         return;
                     }
-                    if (newPassword.length < 6) {
-                        showFloatingAlert('新密码至少6位'); // 调用悬浮提示
-                        return;
-                    }
-                    if (newPassword !== confirmNewPassword) {
-                        showFloatingAlert('两次输入的新密码不一致'); // 调用悬浮提示
-                        return;
-                    }
 
-                    try {
-                        const response = await fetch("{% url 'private:change_password' %}", {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': csrfToken,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                verifyCode: verifyCode,
-                                newPassword: newPassword
-                            })
-                        });
-                        const data = await response.json();
-                        showFloatingAlert(data.msg); // 调用悬浮提示
-
-                        if (data.status === 'success') {
-                            const modal = bootstrap.Modal.getInstance(document.getElementById('changePwdModal'));
-                            modal.hide();
-                            setTimeout(() => window.location.href = '{% url 'BLauth:login' %}', 1500);
-                        }
-                    } catch (error) {
-                        showFloatingAlert('修改失败，请重试'); // 调用悬浮提示
-                        console.error('改密错误：', error);
+                    // 获取卡片上存储的跳转URL
+                    const url = card.getAttribute('data-url');
+                    if (url) {
+                        window.location.href = url;
                     }
                 });
-            }
+            });
+
+            // 模态框关闭时清空表单
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('hidden.bs.modal', () => {
+                    const form = modal.querySelector('form');
+                    if (form) form.reset();
+                });
+            });
         });
     </script>
 {% endblock %}

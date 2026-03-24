@@ -7,157 +7,190 @@
 {% block head %}
     <link rel="stylesheet" href="{% static 'highlight/styles/github-dark.min.css' %}">
     <script src="{% static 'highlight/highlight.min.js' %}"></script>
-    <!-- 新增：提示框样式（可放到css文件，这里先内联） -->
     <style>
-        /* 红色悬浮提示框 */
-        .empty-tip {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #dc3545; /* bootstrap危险色，红色系 */
-            color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
-            z-index: 9999;
-            display: none; /* 初始隐藏 */
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        /* 全局背景统一为更亮的灰色 */
+        main.container {
+            background-color: rgb(140, 140, 140) !important;
+            padding-bottom: 40px;
         }
 
+        /* 统一黑色分割线 */
+        hr {
+            border-color: #000 !important;
+            border-width: 1px !important;
+            opacity: 1 !important;
+            margin: 1rem 0 !important;
+        }
 
-        /* 绿色成功提示框 */
-        .success-tip {
+        /* 文章标题、作者信息、发布时间、正文、评论区 统一背景色 */
+        .blog-header, .blog-author, .blog-content, .comment-item {
+            background-color: rgb(235, 235, 235) !important;
+            padding: 12px 16px !important;
+            border-radius: 6px !important;
+            margin-bottom: 12px !important;
+        }
+
+        /* 标题样式 */
+        .blog-header h1 {
+            margin: 0 !important;
+            color: #000 !important;
+            font-size: 2rem;
+        }
+
+        /* 作者信息 */
+        .blog-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 博客正文：自动换行 */
+        .blog-content {
+            word-wrap: break-word;
+            word-break: break-all;
+            white-space: normal;
+            line-height: 1.6;
+            color: #000;
+        }
+
+        /* 评论按钮下方分隔线 */
+        .comment-divider {
+            height: 1px;
+            background-color: #000;
+            margin: 20px 0;
+            width: 100%;
+        }
+
+        /* 评论项样式 */
+        .comment-item {
+            margin-bottom: 10px !important;
+        }
+        .comment-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .comment-author {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .comment-content {
+            word-wrap: break-word;
+            word-break: break-all;
+            white-space: normal;
+            line-height: 1.5;
+            color: #000;
+        }
+
+        /* 提示框 */
+        .empty-tip, .success-tip {
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: #6610f2; /* bootstrap成功色（绿色） */
-            color: white;
             padding: 10px 20px;
             border-radius: 4px;
             z-index: 9999;
             display: none;
+            color: white;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
+        .empty-tip { background-color: #dc3545; }
+        .success-tip { background-color: #28a745; }
 
-        /* 分页按钮整体样式 */
+        /* 分页 */
         .pagination {
             display: flex;
-            justify-content: center; /* 核心：flex 水平居中 */
-            align-items: center;     /* 垂直居中（可选） */
-            margin-top: 20px;        /* 与评论列表的间距 */
-            margin-bottom: 30px;     /* 底部间距 */
-            padding-left: 0;         /* 清除默认内边距 */
-            list-style: none;        /* 清除默认列表样式 */
+            justify-content: center;
+            list-style: none;
+            padding-left: 0;
+            margin-top: 20px;
         }
-
-        /* 当前页按钮样式 */
-        .pagination .page-item.active .page-link {
+        .page-link {
+            color: #000;
+            border-color: #000;
+            background: rgb(220, 220, 220);
+        }
+        .page-item.active .page-link {
+            background-color: #000;
             color: #fff;
-            background-color: #1a1d20;
-            border-color: #1a1d20;
-        }
-
-        /* 普通按钮样式 */
-        .pagination .page-link {
-            color: #333;
-            background-color: #f8f9fa;
-            border-color: #1a1d20;
-            margin: 0 2px; /* 按钮之间的小间距（可选） */
-        }
-
-        /* 按钮hover样式 */
-        .pagination .page-link:hover {
-            color: #fff;
-            background-color: #5A496E;
-            border-color: #1a1d20;
-        }
-
-        /* 禁用状态按钮样式 */
-        .pagination .page-item.disabled .page-link {
-            color: #a5a2a2;
-            background-color: #fff;
-            border-color: #a5a2a2;
-            cursor: not-allowed; /* 禁用鼠标指针（可选） */
-        }
-
-        /* 去除分页按钮的焦点边框 */
-        .pagination .page-link:focus {
-            outline: none;
-            box-shadow: none;
+            border-color: #000;
         }
     </style>
 {% endblock %}
 
 {% block main %}
-    <h1>{{ blog.title }}</h1>
-    <hr>
-    <div>
-        <img src="{% if blog.author.profile.avatar %}{{ blog.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}" alt="用户头像" class="rounded-circle mb-1" width="30px" height="30px">
-        <span>{{ blog.author.username }}</span>
-        <span class="ms-1">于</span>
-        <span class="ms-1">{{ blog.edit_time|date:"Y年m月d日 H:i" }}发布</span>
+    <!-- 文章标题 -->
+    <div class="blog-header">
+        <h1>{{ blog.title }}</h1>
     </div>
     <hr>
-    <div class="py-1">
+
+    <!-- 作者信息 -->
+    <div class="blog-author">
+        <img src="{% if blog.author.profile.avatar %}{{ blog.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
+             alt="头像" class="rounded-circle" width="30" height="30">
+        <span>{{ blog.author.username }}</span>
+        <span class="ms-2">于 {{ blog.edit_time|date:"Y年m月d日 H:i" }} 发布</span>
+    </div>
+    <hr>
+
+    <!-- 博客正文 -->
+    <div class="blog-content">
         {{ blog.content|safe }}
     </div>
     <hr>
-    <div class="mt-1">
-        <!-- 评论总数仍用blog.comments.all|length -->
-        <h4 id="comment-area">评论({{ blog.comments.all|length }})</h4>
-        <!-- 新增：悬浮提示框 -->
+
+    <!-- 评论区 -->
+    <div>
+        <h4 class="mb-3">评论({{ blog.comments.all|length }})</h4>
+
         <div class="empty-tip" id="commentEmptyTip">评论内容不能为空！</div>
         <div class="success-tip" id="commentSuccessTip">评论发布成功！</div>
-        <!-- 评论表单：增加id便于JS监听 -->
-        <form method="post" action="{% url 'blog:pub_comment' %}" id="commentForm">
+
+        <form id="commentForm" method="post" action="{% url 'blog:pub_comment' %}">
             {% csrf_token %}
             <input type="hidden" name="blog_id" value="{{ blog.id }}">
-            <div>
-                <!-- 输入框增加id -->
-                <input type="text" class="form-control" placeholder="请输入评论" name="content" id="commentContent">
-            </div>
-            <div class="text-end mb-4 mt-3">
-                <button type="submit" class="btn btn-outline-dark">评论</button>
+            <input type="text" class="form-control" name="content" placeholder="请输入评论"
+                   style="background: #fff; border: 1px solid #000; color: #000;">
+            <div class="text-end mt-2">
+                <button class="btn btn-dark" type="submit">评论</button>
             </div>
         </form>
-    </div>
-    <div>
-        <ul class="list-group list-group-flush">
-            {% for comment in comments %}  {# 改为分页后的comments #}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <img src="{% if comment.author.profile.avatar %}{{ comment.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}" alt="用户头像" class="rounded-circle" width="30px" height="30px">
+
+        <!-- 评论按钮下方分隔线 -->
+        <div class="comment-divider"></div>
+
+        <!-- 评论列表 -->
+        <div>
+            {% for comment in comments %}
+                <div id="comment-{{ comment.id }}" class="comment-item">
+                    <div class="comment-meta">
+                        <div class="comment-author">
+                            <img src="{% if comment.author.profile.avatar %}{{ comment.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
+                                 alt="头像" class="rounded-circle" width="30" height="30">
                             <span>{{ comment.author.username }}</span>
                         </div>
-                        <div>
-                            {{ comment.edit_time|date:"Y年m月d日 H:i" }}
-                        </div>
+                        <div class="text-muted small">{{ comment.edit_time|date:"Y-m-d H:i" }}</div>
                     </div>
-                    <div class="list_container mt-3">
+                    <div class="comment-content">
                         {{ comment.content }}
                     </div>
-                </li>
-            {% empty %}  {# 新增：无评论时的提示 #}
-                <li class="list-group-item text-center text-muted">暂无评论，快来抢沙发吧～</li>
+                </div>
+            {% empty %}
+                <div class="text-center py-4 bg-light rounded">暂无评论，快来抢沙发吧～</div>
             {% endfor %}
-        </ul>
+        </div>
 
-        <!-- 替换原有的分页控件代码 -->
+        <!-- 分页 -->
         {% if comment_paginator.num_pages > 1 %}
-            <nav aria-label="评论分页">
-                <ul class="pagination py-3">
-                    <!-- 上一页：增加条件判断，避免页码小于1 -->
+            <nav class="mt-4">
+                <ul class="pagination">
                     <li class="page-item {% if not comments.has_previous %}disabled{% endif %}">
-                        <a class="page-link"
-                           href="{% if comments.has_previous %}?comment_page={{ comments.previous_page_number }}{% else %}javascript:void(0);{% endif %}"
-                           aria-label="Previous">
-                            <span aria-hidden="true">上一页</span>
-                        </a>
+                        <a class="page-link" href="{% if comments.has_previous %}?comment_page={{ comments.previous_page_number }}{% else %}#{% endif %}">上一页</a>
                     </li>
-
-                    <!-- 页码（显示当前页前后2页，最多显示5个页码） -->
                     {% for num in comment_paginator.page_range %}
                         {% if num >= current_comment_page|add:-2 and num <= current_comment_page|add:2 %}
                             <li class="page-item {% if num == current_comment_page %}active{% endif %}">
@@ -165,14 +198,8 @@
                             </li>
                         {% endif %}
                     {% endfor %}
-
-                    <!-- 下一页：同理增加条件判断，避免页码超出总页数 -->
                     <li class="page-item {% if not comments.has_next %}disabled{% endif %}">
-                        <a class="page-link"
-                           href="{% if comments.has_next %}?comment_page={{ comments.next_page_number }}{% else %}javascript:void(0);{% endif %}"
-                           aria-label="Next">
-                            <span aria-hidden="true">下一页</span>
-                        </a>
+                        <a class="page-link" href="{% if comments.has_next %}?comment_page={{ comments.next_page_number }}{% else %}#{% endif %}">下一页</a>
                     </li>
                 </ul>
             </nav>
@@ -182,52 +209,59 @@
     <script>
         hljs.highlightAll();
 
-        // 新增：通用提示显示函数
-        function showTip(tipId, msg = '') {
-            const tipBox = document.getElementById(tipId);
-            if (tipBox) {
-                // 如果传入自定义消息，替换提示文本
-                if (msg) tipBox.textContent = msg;
-                tipBox.style.display = 'block';
-                setTimeout(() => {
-                    tipBox.style.display = 'none';
-                }, 3000);
-            }
+        function showTip(id, msg) {
+            const el = document.getElementById(id);
+            el.innerText = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 2500);
         }
 
-        // 评论表单验证逻辑
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('commentForm');
-            const contentInput = document.getElementById('commentContent');
-            const tipBox = document.getElementById('commentEmptyTip');
-            const successTip = document.getElementById('commentSuccessTip');
-
-            // 监听表单提交
-            form.addEventListener('submit', function(e) {
-                const content = contentInput.value.trim();
-                if (!content) {
-                    e.preventDefault();
-                    showTip('commentEmptyTip'); // 复用提示函数
-                    contentInput.classList.add('is-invalid');
-                    contentInput.focus();
-                    contentInput.oninput = function() {
-                        contentInput.classList.remove('is-invalid');
-                    };
-                }
-            });
-
-            // 处理 Django messages 提示（核心：显示发布成功提示）
-            {% if messages %}
-                {% for msg in messages %}
-                    if ("{{ msg.tags }}" === "success") {
-                        // 显示发布成功提示（复用success-tip）
-                        showTip('commentSuccessTip', "{{ msg }}");
-                    }
-                    if ("{{ msg.tags }}" === "error") {
-                        showTip('commentEmptyTip', "{{ msg }}");
-                    }
-                {% endfor %}
-            {% endif %}
+        document.getElementById('commentForm').addEventListener('submit', function(e) {
+            const content = this.querySelector('input[name=content]').value.trim();
+            if (!content) {
+                e.preventDefault();
+                showTip('commentEmptyTip', '评论内容不能为空！');
+            }
         });
+
+        {% if messages %}
+            {% for msg in messages %}
+                showTip('comment{{ msg.tags|title }}Tip', '{{ msg }}');
+            {% endfor %}
+        {% endif %}
+
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取 URL 中的 comment_id 参数
+            const urlParams = new URLSearchParams(window.location.search);
+            const commentId = urlParams.get('comment_id');
+
+            if (commentId) {
+                // 查找对应的评论元素（假设每个评论容器有 id="comment-xxx"）
+                const targetComment = document.getElementById(`comment-${commentId}`);
+                if (targetComment) {
+                    // 延迟一小段时间确保页面完全加载
+                    setTimeout(() => {
+                        targetComment.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'   // 垂直居中
+                        });
+                    }, 100);
+                } else {
+                    // 如果元素不存在，可能是因为评论是动态加载的，可以监听 DOM 变化
+                    const observer = new MutationObserver((mutations, obs) => {
+                        const element = document.getElementById(`comment-${commentId}`);
+                        if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            obs.disconnect(); // 停止观察
+                        }
+                    });
+                    observer.observe(document.body, { childList: true, subtree: true });
+                }
+            }
+        });
+
+
     </script>
 {% endblock %}
