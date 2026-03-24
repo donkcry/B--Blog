@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-rz(cpe&6&-t7k97c%2@xw(@eey_ua!zwv4b37ezgm810jxu9mw'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -143,8 +143,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_SSL = True
 EMAIL_HOST = 'smtp.qq.com'
 EMAIL_PORT = 465
-EMAIL_HOST_USER = '2839788640@qq.com'
-EMAIL_HOST_PASSWORD = 'tpsrjhxukusgddhg'
+EMAIL_HOST_USER = '2275344995@qq.com'
+EMAIL_HOST_PASSWORD = 'rmaipzxbvvisecjd'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 

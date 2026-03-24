@@ -96,7 +96,7 @@ class UserProfileForm(forms.ModelForm):
     # 新增：邮箱验证码输入框
     email_verify_code = forms.CharField(
         required=False,
-        label="邮箱验证码",
+        label="新邮箱验证码",
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '输入6位验证码'})
     )
 
@@ -152,44 +152,37 @@ class UserProfileForm(forms.ModelForm):
 
 @login_required
 def edit_profile(request):
+    from django.contrib.auth.models import User
+
     if request.method == 'POST':
+        original_username = request.user.username
         form = UserProfileForm(request.POST, instance=request.user)
-        if form.is_valid():
-            # 处理邮箱修改逻辑
+
+        # 用户名重复检查（最稳写法）
+        username = request.POST.get('username', '').strip()
+        error_msg = ""
+        if username and username != original_username:
+            if User.objects.filter(username=username).exclude(id=request.user.id).exists():
+                error_msg = "已存在一位使用该名字的用户"
+
+        if not error_msg and form.is_valid():
+            # 正常保存
             new_email = form.cleaned_data.get('new_email')
             if new_email and new_email != request.user.email:
-                # 验证通过后，更新邮箱
                 request.user.email = new_email
                 request.user.save()
-                # 兜底：删除该用户所有关联的验证码（避免残留）
                 VerifyCode.objects.filter(user=request.user, email=new_email).delete()
-
-            # 保存其他字段
             form.save()
-
-            # 清空旧消息 + 添加成功消息
-            message_storage = messages.get_messages(request)
-            message_storage.used = True
-            messages.success(request, '个人信息修改成功！')
-
-            # 兼容AJAX请求：返回JSON或重定向
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'status': 'success', 'msg': '个人信息修改成功！'})
-            return redirect('private:edit_profile')
+            return JsonResponse({'status': 'success', 'msg': '个人信息修改成功'})
         else:
-            # 表单验证失败，兼容AJAX请求返回页面
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                # 返回包含错误的页面HTML
-                html = render(request, 'private/edit_profile.html', {'form': form}).content
-                return HttpResponse(html, status=200)
+            # 返回错误
+            return JsonResponse({'status': 'error', 'msg': error_msg or "表单验证失败"})
+
     else:
-        message_storage = messages.get_messages(request)
-        message_storage.used = True
         form = UserProfileForm(instance=request.user)
 
     context = {'form': form}
     return render(request, 'private/edit_profile.html', context)
-
 
 # 发送注销验证码
 @login_required
