@@ -17,13 +17,18 @@ from .models import VerifyCode,UserProfile
 
 
 @login_required
+@login_required
 def user_profile(request):
     tab = request.GET.get('tab', 'blogs')
     search_key = request.GET.get('q', '')
 
+    # ========== 设备判断：手机10条，电脑9条 ==========
+    user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+    is_mobile = any(key in user_agent for key in ['mobile', 'android', 'iphone', 'ipod'])
+    per_page = 10 if is_mobile else 9
     # ==============================================
-    # 【终极防御】无论如何 page 都强制 >= 1
-    # ==============================================
+
+    # 强制 page 合法
     raw_page = request.GET.get('page', 1)
     try:
         page = int(raw_page)
@@ -42,14 +47,10 @@ def user_profile(request):
         )
         blog_list = blog_list.distinct().order_by('-edit_time')
 
-        paginator = Paginator(blog_list, 9)
-
-        # ==============================================
-        # 【必杀修复】捕获所有可能的错误
-        # ==============================================
+        paginator = Paginator(blog_list, per_page)  # 用上面的 per_page
         try:
             data_list = paginator.page(page)
-        except:  # 捕获一切报错，直接返回第1页
+        except:
             data_list = paginator.page(1)
 
         placeholder = '搜索标题或内容'
@@ -60,14 +61,10 @@ def user_profile(request):
             content__icontains=search_key
         ).order_by('-edit_time')
 
-        paginator = Paginator(comment_list, 9)
-
-        # ==============================================
-        # 【必杀修复】捕获一切错误
-        # ==============================================
+        paginator = Paginator(comment_list, per_page)  # 评论也一样
         try:
             data_list = paginator.page(page)
-        except:  # 不管报什么错，都给第1页
+        except:
             data_list = paginator.page(1)
 
         placeholder = '搜索评论内容'

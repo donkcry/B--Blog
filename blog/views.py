@@ -12,30 +12,24 @@ from django.contrib import messages
 # Create your views here.
 
 def index(request):
-    # 1. 获取所有博客（按编辑时间倒序）
     blog_list = Blog.objects.all().order_by('-edit_time')
 
-    # 2. 初始化分页器：每页显示6条（可根据需求调整）
-    paginator = Paginator(blog_list, 6)
+    # 手机8个，电脑6个 —— 只改数量
+    user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+    is_mobile = 'mobile' in user_agent or 'android' in user_agent or 'iphone' in user_agent
+    per_page = 8 if is_mobile else 6
 
-    # 3. 获取当前页码（从GET请求中获取，默认第1页）
+    paginator = Paginator(blog_list, per_page)
     page = request.GET.get('page', 1)
 
     try:
-        # 4. 获取当前页的博客数据
         blogs = paginator.page(page)
     except PageNotAnInteger:
-        # 如果页码不是整数，返回第一页
         blogs = paginator.page(1)
     except EmptyPage:
-        # 如果页码超出范围，返回最后一页
         blogs = paginator.page(paginator.num_pages)
 
-    # 5. 将分页数据传入模板
-    return render(request, 'index.html', {
-        'blogs': blogs,
-        'paginator': paginator  # 可选：传递分页器对象供前端使用
-    })
+    return render(request, 'index.html', {'blogs': blogs})
 
 
 def blog_detail(request, blog_id):
@@ -128,10 +122,8 @@ def blog_edit(request):
             })
 
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required  # 必须加登录验证，避免匿名评论
+
+
 from .models import Blog, BlogComment
 
 

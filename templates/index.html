@@ -1,5 +1,4 @@
 {% extends 'base.html'%}
-
 {% load static %}
 
 {% block title %}首页{% endblock %}
@@ -43,53 +42,70 @@
             border-color: #a5a2a2;
         }
 
-
         /* 给分页导航栏添加底部间距 */
         nav[aria-label="Page navigation"] {
             margin-bottom: 30px; /* 数值可以根据需要调整，比如20px、40px等 */
         }
-
 
         /* 去除分页按钮的焦点边框 */
         .pagination .page-link:focus {
             outline: none;
             box-shadow: none; /* 同时去除Bootstrap的焦点阴影 */
         }
+
+        /* ========== 新增：卡片高度统一固定样式 ========== */
+        .card {
+            height: 100%; /* 让同一行的卡片高度一致 */
+            display: flex;
+            flex-direction: column;
+        }
+        .card-body {
+            /* 固定内容区域高度，超出隐藏并显示省略号 */
+            max-height: 120px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 5; /* 显示5行后自动省略 */
+            -webkit-box-orient: vertical;
+        }
+        .card-footer {
+            margin-top: auto; /* 把底部信息固定在卡片最下方 */
+        }
     </style>
 {% endblock %}
 
 {% block main %}
-    <h1 style="color: rgb(211,211,211)">B--博客</h1>
+    <h1 style="color: rgb(211,211,211); text-align: center; margin-bottom: 30px;">B--</h1>
     <div class="row row-cols-2 row-gap-4">
-    {% for blog in blogs %}
-        <div class="col">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <a href="{% url 'blog:blog_detail' blog_id=blog.id %}">{{ blog.title }}</a>
-                </div>
-                <div class="card-body" style="min-height: 100px">
-                    <p class="card-text">{{ blog.content|striptags|truncatechars:200 }}</p>
-                </div>
-                <div class="card-footer text-body-secondary d-flex justify-content-between">
-                    <div>
-                        <img
-                                src="{% if blog.author.profile and blog.author.profile.avatar %}{{ blog.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
-                                alt="{{ blog.author.username }}的头像"
-                                class="rounded-circle"
-                                width="30px"
-                                height="30px"
-                        >
-                        {{ blog.author.username }}
+        {% for blog in blogs %}
+            <div class="col">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <a href="{% url 'blog:blog_detail' blog_id=blog.id %}">{{ blog.title }}</a>
                     </div>
-                    <div>
-                        发布时间:{{ blog.edit_time|date:"Y年m月d日 H:i" }}
+                    <!-- 移除了行内style，改用CSS统一控制 -->
+                    <div class="card-body">
+                        <p class="card-text">{{ blog.content|striptags|truncatechars:200 }}</p>
+                    </div>
+                    <div class="card-footer text-body-secondary d-flex justify-content-between">
+                        <div>
+                            <img
+                                    src="{% if blog.author.profile and blog.author.profile.avatar %}{{ blog.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
+                                    alt="{{ blog.author.username }}的头像"
+                                    class="rounded-circle"
+                                    width="30px"
+                                    height="30px"
+                            >
+                            {{ blog.author.username }}
+                        </div>
+                        <div>
+                            发布时间:{{ blog.edit_time|date:"Y年m月d日 H:i" }}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    {% empty %}
-        <div class="col-12 text-center">暂无博客内容</div>
-    {% endfor %}
+        {% empty %}
+            <div class="col-12 text-center">暂无博客内容</div>
+        {% endfor %}
     </div>
     {% if blogs.paginator.num_pages > 1 %}
         <nav aria-label="Page navigation" class="mt-5 py-1">

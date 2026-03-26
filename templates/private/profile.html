@@ -52,20 +52,22 @@
         /* 两列布局（响应式优化） */
         .content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            /* 关键：手机端最小宽度改小，保证能容纳 + 不会挤高度 */
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 12px;
         }
 
         /* 确保卡片内部内容正常显示 */
         .item-card {
-            height: 100%;           /* 可选，让内容区域也占满，避免间隙 */
-            padding: 1.25rem;
-            background-color: rgb(220, 220, 220) !important;
+            height: 100%;
+            /* 原来 1.25rem → 改成 1rem，手机端省出大量高度 */
+            padding: 1rem;
+            background-color: rgb(230, 230, 230) !important;
             border: 1px solid #000 !important;
             border-radius: 8px !important;
             transition: background-color 0.2s;
             word-break: break-word;
-            box-sizing: border-box; /* 确保内边距不撑大 */
+            box-sizing: border-box;
         }
         .item-card:hover {
             background-color: rgb(200, 200, 200) !important;
@@ -197,6 +199,22 @@
             opacity: 1;
             transform: translateX(-50%) translateY(0);
         }
+
+        @media (max-width: 576px) {
+            .content-grid {
+                gap: 8px; /* 间距缩小 */
+            }
+            .item-card {
+                padding: 0.75rem; /* 内边距再缩小 */
+            }
+            .item-card h4 {
+                margin-bottom: 0.25rem;
+            }
+            .meta-text {
+                margin-bottom: 0.25rem !important;
+            }
+        }
+
     </style>
 {% endblock %}
 
