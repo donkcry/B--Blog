@@ -83,8 +83,13 @@ WSGI_APPLICATION = 'Djangolearn.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'blblog',
+        'USER': 'root',
+        'PASSWORD': os.environ.get('mysqlpassword', ''),
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
         'OPTIONS': {
-            'read_default_file': BASE_DIR / 'mysql.cnf',
+            'charset': 'utf8mb4',
         },
     }
 }
