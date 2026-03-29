@@ -52,7 +52,6 @@
         /* 两列布局（响应式优化） */
         .content-grid {
             display: grid;
-            /* 关键：手机端最小宽度改小，保证能容纳 + 不会挤高度 */
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 12px;
         }
@@ -60,7 +59,6 @@
         /* 确保卡片内部内容正常显示 */
         .item-card {
             height: 100%;
-            /* 原来 1.25rem → 改成 1rem，手机端省出大量高度 */
             padding: 1rem;
             background-color: rgb(230, 230, 230) !important;
             border: 1px solid #000 !important;
@@ -68,6 +66,7 @@
             transition: background-color 0.2s;
             word-break: break-word;
             box-sizing: border-box;
+            position: relative;
         }
         .item-card:hover {
             background-color: rgb(200, 200, 200) !important;
@@ -76,7 +75,7 @@
         /* 博客卡片链接（网格项） */
         .blog-card-link {
             display: block;
-            height: 100%;           /* 占满网格单元格 */
+            height: 100%;
             text-decoration: none;
             color: inherit;
         }
@@ -86,7 +85,13 @@
 
         /* 评论卡片（网格项） */
         .comment-card {
-            height: 100%;           /* 占满网格单元格 */
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* 博客卡片（网格项） */
+        .blog-card {
+            height: 100%;
             cursor: pointer;
         }
 
@@ -200,18 +205,61 @@
             transform: translateX(-50%) translateY(0);
         }
 
-        @media (max-width: 576px) {
+        /* 删除按钮样式 */
+        .delete-btn {
+            font-size: 0.85rem;
+            color: #dc3545 !important;
+            text-decoration: underline !important;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .delete-btn:hover {
+            color: #b02a37 !important;
+        }
+
+        /* 手机端适配：按钮横向排列 */
+        @media (max-width: 768px) {
             .content-grid {
-                gap: 8px; /* 间距缩小 */
+                gap: 8px;
             }
             .item-card {
-                padding: 0.75rem; /* 内边距再缩小 */
+                padding: 0.75rem;
             }
             .item-card h4 {
                 margin-bottom: 0.25rem;
             }
             .meta-text {
                 margin-bottom: 0.25rem !important;
+            }
+            /* 强制容器垂直布局 */
+            .profile-header > div.d-flex {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                flex-wrap: nowrap !important;
+            }
+            /* 确保用户信息占满宽度 */
+            .profile-header > div.d-flex > .flex-grow-1 {
+                width: 100% !important;
+                margin-top: 10px !important;
+            }
+            /* 核心：按钮容器横向排列，占满宽度，在头像下方 */
+            .profile-header > div.d-flex > .btn-group-wrap {
+                flex-direction: row !important;
+                width: 100% !important;
+                margin-top: 12px !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                gap: 8px !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+            }
+            /* 按钮样式 */
+            .profile-header > div.d-flex > .btn-group-wrap .btn {
+                flex: 1 !important;
+                font-size: 0.8rem !important;
+                padding: 0.4rem 0.5rem !important;
+                white-space: nowrap !important;
+                text-align: center !important;
             }
         }
 
@@ -225,19 +273,19 @@
     </div>
 
     <div class="row">
-        <!-- 个人信息头部（保持不变） -->
+        <!-- 个人信息头部 -->
         <div class="col-12 profile-header">
-            <div class="d-flex align-items-center flex-wrap gap-3">
+            <div id="profileHeader" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                 <img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
                      alt="用户头像" width="80" height="80" class="rounded-circle" id="userAvatar" style="cursor: pointer;">
-                <div class="flex-grow-1">
+                <div id="userInfo" style="flex: 1; min-width: 200px;">
                     <h2 class="h4 mb-1 text-black">{{ user.username }}</h2>
                     <p class="meta-text mb-0">
                         注册时间：{{ user.date_joined|date:"Y-m-d H:i" }} |
                         最后登录：{{ user.last_login|date:"Y-m-d H:i" }}
                     </p>
                 </div>
-                <div class="d-flex flex-column gap-2 ms-auto">
+                <div id="btnGroup" style="display: flex; flex-direction: column; gap: 8px; margin-left: auto;">
                     <a href="{% url 'private:edit_profile' %}" class="btn btn-outline-dark">
                         <i class="bi bi-pencil-square"></i> 编辑个人信息
                     </a>
@@ -250,8 +298,38 @@
                 </div>
             </div>
         </div>
+        
+        <style>
+            /* 手机端布局调整 */
+            @media (max-width: 768px) {
+                #profileHeader {
+                    flex-direction: column !important;
+                    align-items: flex-start !important;
+                    flex-wrap: nowrap !important;
+                }
+                #userInfo {
+                    width: 100% !important;
+                    min-width: 0 !important;
+                    margin-top: 10px !important;
+                }
+                #btnGroup {
+                    flex-direction: row !important;
+                    width: 100% !important;
+                    margin-left: 0 !important;
+                    margin-top: 12px !important;
+                    justify-content: space-between !important;
+                }
+                #btnGroup .btn {
+                    flex: 1 !important;
+                    font-size: 0.8rem !important;
+                    padding: 0.4rem 0.5rem !important;
+                    white-space: nowrap !important;
+                    text-align: center !important;
+                }
+            }
+        </style>
 
-        <!-- 更换头像模态框（保持不变） -->
+        <!-- 更换头像模态框 -->
         <div class="modal fade" id="avatarModal" tabindex="-1" aria-labelledby="avatarModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -280,7 +358,7 @@
             </div>
         </div>
 
-        <!-- 注销账号模态框（保持不变） -->
+        <!-- 注销账号模态框 -->
         <div class="modal fade" id="logoutVerifyModal" tabindex="-1" aria-labelledby="logoutVerifyModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -316,7 +394,7 @@
             </div>
         </div>
 
-        <!-- 二次确认注销模态框（保持不变） -->
+        <!-- 二次确认注销模态框 -->
         <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -335,7 +413,7 @@
             </div>
         </div>
 
-        <!-- 修改密码模态框（保持不变） -->
+        <!-- 修改密码模态框 -->
         <div class="modal fade" id="changePwdModal" tabindex="-1" aria-labelledby="changePwdModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -375,7 +453,26 @@
             </div>
         </div>
 
-        <!-- 选项卡导航（保持不变） -->
+        <!-- 删除确认模态框 -->
+        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">确认删除</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="deleteModalBody">
+                        确定要删除吗？删除后无法恢复！
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">确认删除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 选项卡导航 -->
         <div class="col-12">
             <ul class="nav tab-nav">
                 <li class="nav-item">
@@ -387,7 +484,7 @@
             </ul>
         </div>
 
-        <!-- 搜索框（保持不变） -->
+        <!-- 搜索框 -->
         <div class="col-12 d-flex justify-content-center">
             <div class="search-bar" style="width: 600px; max-width: 100%;">
                 <form method="get" class="d-flex align-items-center w-100">
@@ -401,29 +498,30 @@
             </div>
         </div>
 
-        <!-- 内容区域：修改点：博客卡片整块链接，评论卡片JS跳转 -->
+        <!-- 内容区域 -->
         <div class="col-12">
             <div class="content-grid">
                 {% if data_list %}
                     {% if tab == 'blogs' %}
-                        <!-- 博客卡片：整块链接到博客详情，移除内部标题链接 -->
                         {% for blog in data_list %}
-                            <a href="{% url 'blog:blog_detail' blog.id %}" class="blog-card-link">
-                                <div class="item-card">
-                                    <h4 class="h6 mb-2">{{ blog.title }}</h4>
-                                    <div class="meta-text mb-2">
-                                        <span>发布时间：{{ blog.edit_time|date:"Y-m-d H:i" }}</span> |
-                                        <span>分类：{{ blog.category.name }}</span> |
-                                        <span>评论数：{{ blog.comments.count }}</span>
-                                    </div>
-                                    <p class="mb-0 text-dark">{{ blog.content|striptags|truncatechars:100 }}</p>
+                            <div class="item-card position-relative blog-card" data-url="{% url 'blog:blog_detail' blog.id %}">
+                                <h4 class="h6 mb-2">{{ blog.title }}</h4>
+                                <div class="meta-text mb-2">
+                                    <span>发布时间：{{ blog.edit_time|date:"Y-m-d H:i" }}</span> |
+                                    <span>分类：{{ blog.category.name }}</span> |
+                                    <span>评论数：{{ blog.comments.count }}</span>
                                 </div>
-                            </a>
+                                <p class="mb-0 text-dark">{{ blog.content|striptags|truncatechars:100 }}</p>
+
+                                <button class="btn btn-link delete-btn position-absolute bottom-0 end-0 mb-2 me-2"
+                                        data-type="blog" data-id="{{ blog.id }}">
+                                    删除
+                                </button>
+                            </div>
                         {% endfor %}
                     {% else %}
-                        <!-- 评论卡片：JS控制跳转，保留博客标题链接（独立跳转） -->
                         {% for comment in data_list %}
-                            <div class="item-card comment-card" data-url="{% url 'private:comment_redirect' comment.id %}">
+                            <div class="item-card comment-card position-relative" data-url="{% url 'private:comment_redirect' comment.id %}">
                                 <div class="meta-text mb-2">
                                     <span>评论时间：{{ comment.edit_time|date:"Y-m-d H:i" }}</span> |
                                     <span>所属博客：
@@ -433,6 +531,12 @@
                                     </span>
                                 </div>
                                 <p class="mb-0 text-dark">{{ comment.content|truncatechars:80 }}</p>
+
+                                <button class="btn btn-link delete-btn position-absolute bottom-0 end-0 mb-2 me-2"
+                                        data-type="comment" data-id="{{ comment.id }}"
+                                        onclick="event.stopPropagation(); event.preventDefault();">
+                                    删除
+                                </button>
                             </div>
                         {% endfor %}
                     {% endif %}
@@ -450,7 +554,7 @@
             </div>
         </div>
 
-        <!-- 分页控件（保持不变） -->
+        <!-- 分页 -->
         <div class="col-12">
             {% if data_list.paginator.num_pages > 1 %}
                 <nav>
@@ -490,12 +594,10 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 获取 CSRF
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
             const alertBox = document.getElementById('floatingAlert');
             const alertText = document.getElementById('alertText');
 
-            // 悬浮提示（支持成功/错误）
             function showFloatingAlert(message, isSuccess = false) {
                 if (!alertBox || !alertText) return;
                 alertText.textContent = message;
@@ -504,7 +606,6 @@
                 setTimeout(() => alertBox.classList.remove('show'), 3000);
             }
 
-            // 获取 Cookie
             function getCookie(name) {
                 let cookieValue = null;
                 if (document.cookie && document.cookie !== '') {
@@ -520,9 +621,7 @@
                 return cookieValue;
             }
 
-            // ==============================================
-            // 头像上传（保持不变）
-            // ==============================================
+            // 头像上传
             const userAvatar = document.getElementById('userAvatar');
             const avatarModal = new bootstrap.Modal(document.getElementById('avatarModal'));
             const avatarPreview = document.getElementById('avatarPreview');
@@ -570,9 +669,7 @@
                 }
             });
 
-            // ==============================================
-            // 注销：发送验证码（保持不变）
-            // ==============================================
+            // 注销验证码
             const sendVerifyCodeBtn = document.getElementById('sendVerifyCodeBtn');
             let verifyTimer = null;
 
@@ -616,9 +713,7 @@
                 }
             });
 
-            // ==============================================
-            // 注销：确认（保持不变）
-            // ==============================================
+            // 注销确认
             const directConfirmBtn = document.getElementById('directConfirmBtn');
             const logoutConfirmModal = new bootstrap.Modal(document.getElementById('logoutConfirmModal'));
             const finalLogoutBtn = document.getElementById('finalLogoutBtn');
@@ -636,7 +731,6 @@
                     showFloatingAlert('请输入密码');
                     return;
                 }
-
                 logoutConfirmModal.show();
             });
 
@@ -666,9 +760,7 @@
                 }
             });
 
-            // ==============================================
-            // 修改密码：发送验证码（保持不变）
-            // ==============================================
+            // 修改密码验证码
             const sendPwdCodeBtn = document.getElementById('sendPwdCodeBtn');
             let pwdTimer = null;
 
@@ -712,9 +804,7 @@
                 }
             });
 
-            // ==============================================
-            // 修改密码：提交（保持不变）
-            // ==============================================
+            // 修改密码提交
             const confirmChangePwdBtn = document.getElementById('confirmChangePwdBtn');
             const changePwdModal = bootstrap.Modal.getInstance(document.getElementById('changePwdModal'));
 
@@ -750,35 +840,88 @@
 
                     if (data.status === 'success') {
                         changePwdModal?.hide();
-                        setTimeout(() => location.href = '{% url 'BLauth:login' %}', 1500);
+                        setTimeout(() => location.href = "{% url 'BLauth:login' %}", 1500);
                     }
                 } catch (err) {
                     showFloatingAlert('修改失败');
                 }
             });
 
-            // ==============================================
-            // 【新增】评论卡片点击跳转（排除博客标题链接）
-            // ==============================================
+            // 评论卡片跳转
             const commentCards = document.querySelectorAll('.comment-card');
             commentCards.forEach(card => {
                 card.addEventListener('click', (e) => {
-                    // 如果点击的目标是博客标题链接或其内部元素，则不触发卡片跳转
                     const blogLink = e.target.closest('.blog-title-link');
-                    if (blogLink) {
-                        // 让博客标题链接正常跳转，不阻止冒泡
-                        return;
-                    }
-
-                    // 获取卡片上存储的跳转URL
+                    const deleteBtn = e.target.closest('.delete-btn');
+                    if (blogLink || deleteBtn) return;
                     const url = card.getAttribute('data-url');
-                    if (url) {
-                        window.location.href = url;
-                    }
+                    if (url) window.location.href = url;
                 });
             });
 
-            // 模态框关闭时清空表单
+            // 博客卡片跳转
+            const blogCards = document.querySelectorAll('.blog-card');
+            blogCards.forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const deleteBtn = e.target.closest('.delete-btn');
+                    if (deleteBtn) return;
+                    const url = card.getAttribute('data-url');
+                    if (url) window.location.href = url;
+                });
+            });
+
+            // 删除功能
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+            const deleteModalBody = document.getElementById('deleteModalBody');
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            let currentDelete = null;
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const type = btn.dataset.type;
+                    const id = btn.dataset.id;
+                    currentDelete = { type, id };
+
+                    if (type === 'blog') {
+                        deleteModalBody.textContent = '确定要删除这篇博客吗？删除后无法恢复！';
+                    } else {
+                        deleteModalBody.textContent = '确定要删除这条评论吗？删除后无法恢复！';
+                    }
+                    deleteModal.show();
+                });
+            });
+
+            confirmDeleteBtn.addEventListener('click', async () => {
+                if (!currentDelete) return;
+                const { type, id } = currentDelete;
+                let url = '';
+
+                if (type === 'blog') {
+                    url = "/private/delete-blog/" + id + "/";
+                } else {
+                    url = "/private/delete-comment/" + id + "/";
+                }
+
+                try {
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrfToken }
+                    });
+                    const data = await res.json();
+                    showFloatingAlert(data.msg, data.status === 'success');
+
+                    if (data.status === 'success') {
+                        deleteModal.hide();
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                } catch (e) {
+                    showFloatingAlert('删除失败');
+                }
+            });
+
+            // 模态框关闭重置
             document.querySelectorAll('.modal').forEach(modal => {
                 modal.addEventListener('hidden.bs.modal', () => {
                     const form = modal.querySelector('form');

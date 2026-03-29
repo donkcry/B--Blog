@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model,login,logout
 from django.urls import reverse
 import json
 import smtplib
+from django_ratelimit.decorators import ratelimit
 
 User = get_user_model()
 
@@ -24,7 +25,11 @@ def login_required_redirect(func):
     return wrapper
 
 
+from django.contrib import messages
+
 @require_http_methods(['GET', 'POST'])
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)
+@ratelimit(key='post:email', rate='3/m', method='POST', block=True)
 @login_required_redirect
 def BLlogin(request):
     if request.method == 'GET':
@@ -68,6 +73,7 @@ def BLlogout(request):
 
 
 @require_http_methods(['GET', 'POST'])
+@ratelimit(key='ip', rate='3/m', method='POST', block=True)
 @login_required_redirect
 def register(request):
     if request.method == 'GET':
@@ -94,6 +100,8 @@ def register(request):
 
 # views.py - captcha函数
 @require_http_methods(['GET'])
+@ratelimit(key='ip', rate='3/m', method='GET', block=True)
+@ratelimit(key='get:email', rate='2/m', method='GET', block=True)
 def captcha(request):
     email = request.GET.get('email')
     if not email or not email.endswith('@qq.com'):

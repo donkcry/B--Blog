@@ -23,8 +23,15 @@
         }
 
         /* 文章标题、作者信息、发布时间、正文、评论区 统一背景色 */
-        .blog-header, .blog-author, .blog-content, .comment-item {
+        .blog-content, .comment-item {
             background-color: rgb(235, 235, 235) !important;
+            padding: 12px 16px !important;
+            border-radius: 6px !important;
+            margin-bottom: 12px !important;
+        }
+        
+        .blog-header, .blog-author {
+            background-color: rgb(140, 140, 140) !important;
             padding: 12px 16px !important;
             border-radius: 6px !important;
             margin-bottom: 12px !important;
@@ -35,12 +42,14 @@
             margin: 0 !important;
             color: #000 !important;
             font-size: 2rem;
+            text-align: center;
         }
 
         /* 作者信息 */
         .blog-author {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 10px;
         }
 
@@ -130,7 +139,7 @@
 
     <!-- 作者信息 -->
     <div class="blog-author">
-        <img src="{% if blog.author.profile.avatar %}{{ blog.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
+        <img src="{% if blog.author.profile and blog.author.profile.avatar %}{{ blog.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
              alt="头像" class="rounded-circle" width="30" height="30">
         <span>{{ blog.author.username }}</span>
         <span class="ms-2">于 {{ blog.edit_time|date:"Y年m月d日 H:i" }} 发布</span>
@@ -169,7 +178,7 @@
                 <div id="comment-{{ comment.id }}" class="comment-item">
                     <div class="comment-meta">
                         <div class="comment-author">
-                            <img src="{% if comment.author.profile.avatar %}{{ comment.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
+                            <img src="{% if comment.author.profile and comment.author.profile.avatar %}{{ comment.author.profile.avatar.url }}{% else %}{% static 'img/default.png' %}{% endif %}"
                                  alt="头像" class="rounded-circle" width="30" height="30">
                             <span>{{ comment.author.username }}</span>
                         </div>
@@ -207,7 +216,11 @@
     </div>
 
     <script>
-        hljs.highlightAll();
+        try {
+            hljs.highlightAll();
+        } catch (e) {
+            console.error('Highlight.js error:', e);
+        }
 
         function showTip(id, msg) {
             const el = document.getElementById(id);
@@ -226,7 +239,11 @@
 
         {% if messages %}
             {% for msg in messages %}
-                showTip('comment{{ msg.tags|title }}Tip', '{{ msg }}');
+                {% if msg.tags == 'success' %}
+                    showTip('commentSuccessTip', '{{ msg }}');
+                {% else %}
+                    showTip('commentEmptyTip', '{{ msg }}');
+                {% endif %}
             {% endfor %}
         {% endif %}
 

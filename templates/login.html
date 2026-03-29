@@ -109,6 +109,11 @@
             {% if register_success %}
                 showCustomAlert('注册成功！请登录', 'success');
             {% endif %}
+            {% if messages %}
+                {% for message in messages %}
+                    showCustomAlert('{{ message }}', 'info');
+                {% endfor %}
+            {% endif %}
         });
     </script>
 {% endblock %}

@@ -421,3 +421,20 @@ def update_avatar(request):
             'avatar_url': profile.avatar.url
         })
     return JsonResponse({'status': 'error', 'msg': '请求方式错误或未保存文件'})
+
+
+@login_required
+def delete_blog(request, blog_id):
+    blog = get_object_or_404(Blog, id=blog_id, author=request.user)
+    if request.method == 'POST':
+        blog.delete()
+        return JsonResponse({'status': 'success', 'msg': '博客已删除'})
+    return JsonResponse({'status': 'error', 'msg': '请求方式错误'})
+
+@login_required
+def delete_comment(request, comment_id):
+    comment = get_object_or_404(BlogComment, id=comment_id, author=request.user)
+    if request.method == 'POST':
+        comment.delete()
+        return JsonResponse({'status': 'success', 'msg': '评论已删除'})
+    return JsonResponse({'status': 'error', 'msg': '请求方式错误'})

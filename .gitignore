@@ -1,5 +1,6 @@
 # 虚拟环境
 venv/
+.venv/
 .env
 Pipfile
 Pipfile.lock
@@ -10,10 +11,33 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Django相关（数据库文件忽略）
+# Django相关
 db.sqlite3
 db.sqlite3-journal
+*.log
+local_settings.py
 
-# 忽略media下的用户上传文件（但保留avatars目录结构）
+# 忽略media下的用户上传文件（但保留目录结构）
 /media/avatars/*
 !/media/avatars/.gitkeep
+/media/*
+!/media/.gitkeep
+
+# IDE配置
+.idea/
+*.swp
+*.swo
+*~
+
+# VS Code 配置（可选，保留有用的设置）
+# .vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 静态文件收集
+static_collect/

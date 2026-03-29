@@ -5,6 +5,7 @@ import blog.urls
 import BLauth.urls
 from django.conf import settings
 from django.conf.urls.static import static
+from . import views
 
 
 
@@ -15,6 +16,9 @@ urlpatterns = [
     path('icon',include('icon.urls')),
     path('private/',include('private.urls')),
 ]
+
+# 自定义 429 错误处理
+handler429 = views.ratelimited_view
 
 
 from django.views.static import serve

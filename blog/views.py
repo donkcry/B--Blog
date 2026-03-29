@@ -1,13 +1,27 @@
 from django.shortcuts import render,redirect,get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.urls import reverse_lazy,reverse
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required as django_login_required
 from django.views.decorators.http import require_http_methods,require_POST,require_GET
 from .models import *
 from .forms import EditBlogForm
 from django.http.response import JsonResponse
 from django.db.models import Q
 from django.contrib import messages
+from django_ratelimit.decorators import ratelimit
+
+# 自定义登录装饰器，添加登录提示
+def login_required(function=None, login_url=None):
+    def decorator(view_func):
+        def _wrapped_view(request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                messages.info(request, '请先登录！')
+                return redirect(login_url or reverse_lazy('BLauth:login'))
+            return view_func(request, *args, **kwargs)
+        return _wrapped_view
+    if function:
+        return decorator(function)
+    return decorator
 
 # Create your views here.
 
@@ -68,6 +82,8 @@ def blog_detail(request, blog_id):
 
 
 @require_http_methods(['GET','POST'])
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)
+@ratelimit(key='user', rate='3/m', method='POST', block=True)
 @login_required(login_url=reverse_lazy('BLauth:login'))
 def blog_edit(request):
     if request.method == 'GET':
@@ -127,7 +143,9 @@ def blog_edit(request):
 from .models import Blog, BlogComment
 
 
-@login_required
+@login_required(login_url=reverse_lazy('BLauth:login'))
+@ratelimit(key='ip', rate='10/m', method='POST', block=True)
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 def pub_comment(request):
     if request.method != 'POST':
         messages.error(request, '无效的请求方式！')
@@ -163,6 +181,7 @@ def pub_comment(request):
 
 
 @require_GET
+@ratelimit(key='ip', rate='30/m', method='GET', block=True)
 def search(request):
     #/search?q=xxx
     q=request.GET.get('q')

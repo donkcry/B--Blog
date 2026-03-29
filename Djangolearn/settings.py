@@ -4,7 +4,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -18,15 +17,26 @@ ALLOWED_HOSTS = [
     '1217841murl48.vicp.fun',
 ]
 
+# ====================== 公网 HTTPS 穿透专用配置（最重要） ======================
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# 安全 Cookie（必须开，因为是 HTTPS）
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
+# HSTS 强制 HTTPS（你已经在 Nginx 配置了，这里可以关，避免冲突）
+SECURE_HSTS_SECONDS = 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+
+# 安全基础配置
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
-
+SECURE_SSL_REDIRECT = False  # 跳转交给 Nginx，Django 不要管
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -55,8 +65,7 @@ ROOT_URLCONF = 'Djangolearn.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
-        ,
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -70,10 +79,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Djangolearn.wsgi.application'
 
-
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -83,69 +89,38 @@ DATABASES = {
     }
 }
 
-
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    { 'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator' },
+    { 'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator' },
+    { 'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator' },
+    { 'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator' },
 ]
-
 
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = 'zh-hans'
-
 TIME_ZONE = 'Asia/Shanghai'
-
 USE_I18N = True
-
 USE_TZ = False
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+# Static files
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_collect')
 
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-
-# ====================== 公网必加：HTTPS 安全增强 ======================
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SESSION_COOKIE_SECURE = True       # Cookie 仅通过 HTTPS 传输
-CSRF_COOKIE_SECURE = True          # CSRF 令牌仅通过 HTTPS
-SECURE_SSL_REDIRECT = False        # 内网穿透可关，有 HTTPS 就开
-SECURE_HSTS_SECONDS = 31536000     # 强制浏览器只用 HTTPS 一年
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-
-
-
+# 登录配置
 LOGIN_URL = '/BLauth/login'
-
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 3600
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# 邮箱
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_SSL = True
 EMAIL_HOST = 'smtp.qq.com'
@@ -154,13 +129,16 @@ EMAIL_HOST_USER = '2275344995@qq.com'
 EMAIL_HOST_PASSWORD = os.environ.get('QQ_EMAIL_AUTH_CODE', '')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static_collect')
-
-# Media文件配置（用户上传的文件）
-MEDIA_URL = '/media/'  # 浏览器访问Media文件的URL前缀
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Media文件在本地的存储路径
-
-# 允许你的域名跨域请求
+# 信任域名
 CSRF_TRUSTED_ORIGINS = [
     'https://1217841murl48.vicp.fun',
 ]
+
+# Ratelimit
+RATELIMIT_MESSAGE = "请求过于频繁，请稍后再试。"
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}

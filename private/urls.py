@@ -21,4 +21,6 @@ urlpatterns = [
     # 发送邮箱修改验证码
     path('send-email-change-code/', views.send_email_change_code, name='send_email_change_code'),
     path('update_avatar/', views.update_avatar, name='update_avatar'),
+    path('delete-blog/<int:blog_id>/', views.delete_blog, name='delete_blog'),
+    path('delete-comment/<int:comment_id>/', views.delete_comment, name='delete_comment'),
 ]

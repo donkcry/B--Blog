@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}请求过于频繁{% endblock %}
+
+{% block head %}
+    <style>
+        .error-container {
+            text-align: center;
+            padding: 60px 20px;
+            background-color: rgb(235, 235, 235);
+            border-radius: 10px;
+            margin: 40px auto;
+            max-width: 600px;
+        }
+        .error-code {
+            font-size: 6rem;
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        .error-message {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .error-description {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #1a1d20;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .back-btn:hover {
+            background-color: #333;
+            color: white;
+        }
+    </style>
+{% endblock %}
+
+{% block main %}
+    <div class="error-container">
+        <div class="error-code">429</div>
+        <div class="error-message">请求过于频繁</div>
+        <div class="error-description">
+            您的操作速度太快了，请稍后再试。<br>
+            这是为了保护网站免受恶意攻击而设置的安全措施。
+        </div>
+        <a href="{% url 'blog:index' %}" class="back-btn">返回首页</a>
+    </div>
+{% endblock %}
