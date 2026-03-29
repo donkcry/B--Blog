@@ -16,7 +16,7 @@ DEBUG = False
 ALLOWED_HOSTS = [host for host in os.environ.get('ALLOWED_HOSTS', '').split(',') if host]
 
 # ====================== 公网 HTTPS 穿透专用配置（最重要） ======================
-USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_HOST = False
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # 安全 Cookie（必须开，因为是 HTTPS）
