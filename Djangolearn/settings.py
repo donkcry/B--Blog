@@ -1,5 +1,8 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -8,14 +11,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = [
-    '1217841murl48.vicp.fun',
-]
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
 # ====================== 公网 HTTPS 穿透专用配置（最重要） ======================
 USE_X_FORWARDED_HOST = True
@@ -83,11 +84,11 @@ WSGI_APPLICATION = 'Djangolearn.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'blblog',
-        'USER': 'root',
-        'PASSWORD': os.environ.get('mysqlpassword', ''),
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'NAME': os.environ.get('DB_NAME', 'blblog'),
+        'USER': os.environ.get('DB_USER', 'root'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
         },
@@ -127,17 +128,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # 邮箱
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_USE_SSL = True
-EMAIL_HOST = 'smtp.qq.com'
-EMAIL_PORT = 465
-EMAIL_HOST_USER = '2275344995@qq.com'
-EMAIL_HOST_PASSWORD = os.environ.get('QQ_EMAIL_AUTH_CODE', '')
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'True').lower() == 'true'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.qq.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '465'))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # 信任域名
-CSRF_TRUSTED_ORIGINS = [
-    'https://1217841murl48.vicp.fun',
-]
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
 
 # Ratelimit
 RATELIMIT_MESSAGE = "请求过于频繁，请稍后再试。"
